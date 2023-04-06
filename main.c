@@ -25,7 +25,7 @@
 // Build targets
 
 #define VIC20 false
-#define C64 true
+#define C64 false
 
 /**
  * Checks is a string starts with a substring

@@ -36,8 +36,11 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR` `INVERT` `NEGATE`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
+* **Strings:** `TYPE`
 * **Misc:** `BYE` `EXECUTE`
+
 
 ### Words only included in Pa'lante
 
 None yet - but I expect a `LOAD` and `SAVE` at least
+
