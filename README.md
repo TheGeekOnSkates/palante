@@ -1,4 +1,5 @@
 # Pa'lante
+Version 0.1
 
 ## Overview
 
@@ -23,7 +24,7 @@ Forth has a rich history of cheesy puns.  With different variants having names l
 
 But I'm also fluent in Spanish, and especially familiar with Caribbean (Cuban, Puerto Rican etc.) Spanish slang.  So if you would ask me, how would you translate kingly-sounding phrases like "Let us go Forth" or "I shall go forth"... the translation is obvious.  In "proper" Spanish, Forth would be "para adelante".  But in some places, that get shortened to "para'delante" or (more commonly) just "pa'lante".  This of course reminds me of a few of my favorite songs: [Vamos Pa'lante!](https://www.youtube.com/watch?v=G7TDR9CpQOc), [Voy Pa'lante](https://www.youtube.com/watch?v=hK2wySMe_jc) and even [No Vuelvo Pa'tras](https://www.youtube.com/watch?v=Slng3XclDQ8) ("pa'tras" being the opposite of pa'lante - rough translation is "I'm not turning back").  Asi que vamos pa'lante! :)
 
-## Built-in words
+## Available words
 
 I'm not going to dive into how Forth works - the link in the "overview" section is really the best place to start.  But what I will do is list the words Pa'lante supports, and extra explanation if they are not "standard" Forth words (like loading/saving files on disk, which of course will be very different on Commodore machines than anything else).
 
@@ -32,6 +33,10 @@ I'm not going to dive into how Forth works - the link in the "overview" section 
 If you know Forth, these do what you think they do. 😆  Note that they are case-sensitive - that is, they're lowercase if you're using the lowercase character set, or upper case if you're using that character set.  I used uppercase in my docs just as a convention, but by default they will be lowercase (not sure how I can fix that - it's a compiler thing).
 
 * **Memory:** `@` `!` `@` `!`
+* **Math:** `+` `-` `*` `/` `MOD`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP`
-* **Misc:** `EXECUTE`
+* **Misc:** `BYE` `EXECUTE`
+
+
+
 

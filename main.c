@@ -22,6 +22,10 @@
 // MACROS
 // -----------------------------------------------------------------------------
 
+// Build targets
+
+#define VIC20 true
+
 /**
  * Checks is a string starts with a substring
  * @param[in] The string to be tested
@@ -41,7 +45,8 @@
 
 #define STATUS_OK				0		// No error, "ok"
 #define STATUS_COMPILED			1		// All words compiled successfully
-#define STATUS_STACK_UNDERFLOW	2		// Stack underflow
+#define STATUS_STACK_UNDERFLOW	2		// Stack underflow error
+#define STATUS_DIV_BY_ZERO		3		// Division by 0 error
 
 
 
@@ -145,6 +150,48 @@ void execute() {
 	asm("JSR _goWhere");
 }
 
+void add() {
+	// +
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	ds[dsp - 1] += ds[dsp];
+}
+
+void subtract() {
+	// - 
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	ds[dsp - 1] -= ds[dsp];
+}
+
+void multiply() {
+	// *
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	ds[dsp - 1] *= ds[dsp];
+}
+
+void divide() {
+	// /
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	if (!ds[dsp]) { status = STATUS_DIV_BY_ZERO; return; }
+	ds[dsp - 1] /= ds[dsp];
+}
+
+void mod() {
+	// /
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	if (!ds[dsp]) { status = STATUS_DIV_BY_ZERO; return; }
+	ds[dsp - 1] %= ds[dsp];
+}
+
+void bye() {
+	exit(0);
+}
+
+
 
 // -----------------------------------------------------------------------------
 // TO BE SORTED
@@ -171,7 +218,13 @@ bool IsNumber(char* word) {
 
 void main() {
 	static int8_t i;
-	printf("%cpa'lante 0.0\n", 147);
+	#if VIC20
+	asm("LDA #8");
+	asm("STA 36879");
+	asm("LDA #1");
+	asm("STA 646");
+	#endif
+	printf("%cpa'lante 0.1\n", 147);
 	while(true) {
 		// Get user input
 		memset(input, 0, INPUT_SIZE);
@@ -226,6 +279,29 @@ void main() {
 				printStack();
 				continue;
 			}
+			if (StringStartsWith(ip, "+ ")) {
+				add();
+				continue;
+			}
+			if (StringStartsWith(ip, "- ")) {
+				subtract();
+				continue;
+			}
+			if (StringStartsWith(ip, "* ")) {
+				multiply();
+				continue;
+			}
+			if (StringStartsWith(ip, "/ ")) {
+				divide();
+				continue;
+			}
+			if (StringStartsWith(ip, "mod ")) {
+				mod();
+				continue;
+			}
+			if (StringStartsWith(ip, "bye ")) {
+				bye();
+			}
 			if (StringStartsWith(ip, "c! ")) {
 				cstore();
 				continue;
@@ -267,16 +343,18 @@ void main() {
 			}
 			
 			// If at any point there's an error, stop running
-			if (status > 1) {
+			if (status > STATUS_COMPILED) {
 				dsp = 0;
 				rsp = 0;
+				break;
 			}
 		}
 		
-		// And print "ok" or an error
+		// And print the system status
 		switch(status) {
 			case STATUS_COMPILED: printf("compiled"); break;
 			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
+			case STATUS_DIV_BY_ZERO: printf("division by zero"); break;
 			default: printf("  ok");
 		}
 		printf("\n");
