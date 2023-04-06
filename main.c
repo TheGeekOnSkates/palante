@@ -31,17 +31,30 @@
  */
 #define StringStartsWith(a, b) (strstr(a, b) == a) 
 
+// Misc. constants
+
+#define INPUT_SIZE 80
+#define STACK_SIZE 256
+
+
+// Status codes
+
+#define STATUS_OK				0		// No error, "ok"
+#define STATUS_COMPILED			1		// All words compiled successfully
+#define STATUS_STACK_UNDERFLOW	2		// Stack underflow
+
 
 
 // -----------------------------------------------------------------------------
 // GLOBAL VARIABLES
 // -----------------------------------------------------------------------------
 
-uint16_t ds[256], dsp,
-	rs[256], rsp;
-char input[80];
-char* ip;
-
+uint16_t ds[STACK_SIZE], dsp,	// Data stack and its pointer
+	rs[STACK_SIZE], rsp,		// Return stack and its pointer
+	goWhere;					// Used to make EXECUTE work
+uint8_t status = STATUS_OK;		// System status
+char input[INPUT_SIZE];			// User input buffer
+char* ip;						// Interpreter pointer
 
 
 // -----------------------------------------------------------------------------
@@ -58,6 +71,7 @@ void printStack() {
 
 void dup() {
 	// DUP
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
 	ds[dsp] = ds[dsp - 1];
 	dsp++;
 }
@@ -65,6 +79,7 @@ void dup() {
 void swap() {
 	// SWAP
 	static uint8_t n;
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
 	n = ds[dsp - 2];
 	ds[dsp - 2] = ds[dsp - 1];
 	ds[dsp - 1] = n;
@@ -72,27 +87,63 @@ void swap() {
 
 void over() {
 	// OVER
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
 	ds[dsp] = ds[dsp - 2];
 	dsp++;
 }
 
 void emit() {
 	// EMIT
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
 	dsp--;
 	printf("%lc", ds[dsp]);
 }
 
 void drop() {
 	// DROP
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
 	dsp--;
 }
 
 void pop() {
 	// .
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
 	dsp--;
 	printf("%d ", ds[dsp]);
 }
 
+void fetch() {
+	// @
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 1] = PEEKW(ds[dsp]);
+}
+
+void cfetch() {
+	// C@
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 1] = PEEK(ds[dsp - 1]);
+}
+
+void store() {
+	// @
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	POKEW(ds[dsp - 1], ds[dsp - 2]);
+	dsp -= 2;
+}
+
+void cstore() {
+	// C!
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	POKE(ds[dsp - 1], ds[dsp - 2]);
+	dsp -= 2;
+}
+
+void execute() {
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	goWhere = ds[dsp - 1];
+	asm("JSR _goWhere");
+}
 
 
 // -----------------------------------------------------------------------------
@@ -122,11 +173,11 @@ void main() {
 	static int8_t i;
 	while(true) {
 		// Get user input
-		memset(input, 0, 80);
-		fgets(input, 80, stdin);
+		memset(input, 0, INPUT_SIZE);
+		fgets(input, INPUT_SIZE, stdin);
 		
 		// Push all the words the user typed onto the return stack
-		for (i=79; i>-1; i--) {
+		for (i=INPUT_SIZE - 1; i>-1; i--) {
 			
 			// Move past any unset chars
 			while (i>0 && input[i] == '\0') i--;
@@ -150,19 +201,36 @@ void main() {
 			}
 		}
 		
-		// And run it
+		// Run it, one word at a time
+		status = STATUS_OK;
 		while(rsp > 0) {
 			// Pop the return stack to the input pointer
 			rsp--;
 			ip = (char*)rs[rsp];
 
 			// Handle Forth words
-			if (StringStartsWith(ip, ".s ")) {
-				printStack();
+			if (StringStartsWith(ip, "! ")) {
+				store();
+				continue;
+			}
+			if (StringStartsWith(ip, "@ ")) {
+				fetch();
 				continue;
 			}
 			if (StringStartsWith(ip, ". ")) {
 				pop();
+				continue;
+			}
+			if (StringStartsWith(ip, ".s ")) {
+				printStack();
+				continue;
+			}
+			if (StringStartsWith(ip, "c! ")) {
+				cstore();
+				continue;
+			}
+			if (StringStartsWith(ip, "c@ ")) {
+				cfetch();
 				continue;
 			}
 			if (StringStartsWith(ip, "dup ")) {
@@ -177,6 +245,10 @@ void main() {
 				emit();
 				continue;
 			}
+			if (StringStartsWith(ip, "execute ")) {
+				execute();
+				continue;
+			}
 			if (StringStartsWith(ip, "over ")) {
 				over();
 				continue;
@@ -185,11 +257,27 @@ void main() {
 				swap();
 				continue;
 			}
+			
+			// If it's not a Forth word, is it a number?  If so, push it onto the stack.
 			if (IsNumber(ip)) {
 				ds[dsp] = atoi(ip);
 				dsp++;
 				continue;
 			}
+			
+			// If at any point there's an error, stop running
+			if (status > 1) {
+				dsp = 0;
+				rsp = 0;
+			}
 		}
+		
+		// And print "ok" or an error
+		switch(status) {
+			case STATUS_COMPILED: printf("compiled"); break;
+			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
+			default: printf("  ok");
+		}
+		printf("\n");
 	}
 }
