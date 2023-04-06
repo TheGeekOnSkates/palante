@@ -6,8 +6,8 @@ Version 0.1
 Pa'lante is a [Forth](https://www.forth.com/starting-forth/) interpreter for the following 8-bit computers:
 
 * The Commodore PET (starting in version 0.0)
-* The VIC-20 (planned)
-* The C64 (planned)
+* The VIC-20 (starting in version 0.1, requires 35K expansion, though if I could decrypt their config-language I might get it working on other VIC setups)
+* The C64 (starting in version 0.1)
 * The C128 (planned)
 * The Plus4 (planned)
 * The Commander X16 (planned)
@@ -33,10 +33,10 @@ I'm not going to dive into how Forth works - the link in the "overview" section 
 If you know Forth, these do what you think they do. 😆  Note that they are case-sensitive - that is, they're lowercase if you're using the lowercase character set, or upper case if you're using that character set.  I used uppercase in my docs just as a convention, but by default they will be lowercase (not sure how I can fix that - it's a compiler thing).
 
 * **Memory:** `@` `!` `@` `!`
-* **Math:** `+` `-` `*` `/` `MOD`
+* **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP`
 * **Misc:** `BYE` `EXECUTE`
 
+### Words only included in Pa'lante
 
-
-
+None yet - but I expect a `LOAD` and `SAVE` at least

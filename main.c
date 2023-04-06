@@ -24,7 +24,8 @@
 
 // Build targets
 
-#define VIC20 true
+#define VIC20 false
+#define C64 true
 
 /**
  * Checks is a string starts with a substring
@@ -54,9 +55,9 @@
 // GLOBAL VARIABLES
 // -----------------------------------------------------------------------------
 
-uint16_t ds[STACK_SIZE], dsp,	// Data stack and its pointer
-	rs[STACK_SIZE], rsp,		// Return stack and its pointer
-	goWhere;					// Used to make EXECUTE work
+int16_t ds[STACK_SIZE], dsp,	// Data stack and its pointer
+	rs[STACK_SIZE], rsp;		// Return stack and its pointer
+uint16_t goWhere;				// Used to make EXECUTE work
 uint8_t status = STATUS_OK;		// System status
 char input[INPUT_SIZE];			// User input buffer
 char* ip;						// Interpreter pointer
@@ -187,6 +188,41 @@ void mod() {
 	ds[dsp - 1] %= ds[dsp];
 }
 
+void lshift() {
+	// LSHIFT
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 2] = ds[dsp - 2] << ds[dsp - 1];
+	dsp--;
+}
+
+void rshift() {
+	// RSHIFT
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 2] = ds[dsp - 2] >> ds[dsp - 1];
+	dsp--;
+}
+
+void and() {
+	// AND
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 2] = ds[dsp - 2] & ds[dsp - 1];
+	dsp--;
+}
+
+void or() {
+	// OR
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 2] = ds[dsp - 2] | ds[dsp - 1];
+	dsp--;
+}
+
+void xor() {
+	// XOR
+	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
+	ds[dsp - 2] = ds[dsp - 2] ^ ds[dsp - 1];
+	dsp--;
+}
+
 void bye() {
 	exit(0);
 }
@@ -218,13 +254,21 @@ bool IsNumber(char* word) {
 
 void main() {
 	static int8_t i;
+	
+	// Set the background color to black and the text color to white
 	#if VIC20
 	asm("LDA #8");
 	asm("STA 36879");
 	asm("LDA #1");
 	asm("STA 646");
+	#elif C64
+	asm("LDA #0");
+	asm("STA 32580");
+	asm("STA 32581");
+	asm("LDA #1");
+	asm("STA 646");
 	#endif
-	printf("%cpa'lante 0.1\n", 147);
+	printf("%cpa'lante 0.1\n\n", 147);
 	while(true) {
 		// Get user input
 		memset(input, 0, INPUT_SIZE);
@@ -299,6 +343,10 @@ void main() {
 				mod();
 				continue;
 			}
+			if (StringStartsWith(ip, "and ")) {
+				and();
+				continue;
+			}
 			if (StringStartsWith(ip, "bye ")) {
 				bye();
 			}
@@ -326,12 +374,28 @@ void main() {
 				execute();
 				continue;
 			}
+			if (StringStartsWith(ip, "lshift ")) {
+				lshift();
+				continue;
+			}
+			if (StringStartsWith(ip, "or ")) {
+				or();
+				continue;
+			}
 			if (StringStartsWith(ip, "over ")) {
 				over();
 				continue;
 			}
+			if (StringStartsWith(ip, "rshift ")) {
+				rshift();
+				continue;
+			}
 			if (StringStartsWith(ip, "swap ")) {
 				swap();
+				continue;
+			}
+			if (StringStartsWith(ip, "xor ")) {
+				xor();
 				continue;
 			}
 			
