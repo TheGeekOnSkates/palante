@@ -171,6 +171,7 @@ bool IsNumber(char* word) {
 
 void main() {
 	static int8_t i;
+	printf("%cpa'lante 0.0\n", 147);
 	while(true) {
 		// Get user input
 		memset(input, 0, INPUT_SIZE);
