@@ -346,13 +346,13 @@ bool IsNumber(char* word) {
 }
 
 bool InDictionary() {
-	// Build a string: \t + current word + \n
+	// Build a string: \t + current word + space
 	static char wordName[82], * temp;
 	static uint16_t i;
 	memset(wordName, 0, 82);
 	wordName[0] = '\t';
-	temp = ip;
-	while(temp[0] != ' ' && temp[0] != '\0') {
+	temp = ip; i = 0;
+	while(temp[0] != ' ' && temp[0] != '\n') {
 		wordName[i + 1] = temp[0];
 		i++; temp++;
 	}
@@ -363,9 +363,29 @@ bool InDictionary() {
 	temp = strstr(dictionary, wordName);
 	if (temp == NULL) return false;
 	
-	// for now, just
+	// If it gets here, it IS in the dictionary, so push every word in its
+	// definition onto the return stack
 	temp += i;
-	printf("temp = \"%s\"\n", temp);
+	while(temp[0] != '\t') {
+		// First move past any spaces (users might enter more than 1)
+		while(temp[0] == ' ') {
+			temp++;
+			continue;
+		}
+		
+		// If we're at the end of the word, we're done
+		while(temp[0] == '\t') break;
+		
+		// Push a pointer to the first character of the word to the return stack
+		rs[rsp] = (uint16_t)temp;
+		rsp++;
+		
+		// And move past any non-space, non-Tab characters (Tab is a delimiter)
+		while(temp[0] != ' ' && temp[0] != '\t') {
+			temp++;
+			continue;
+		}
+	}
 	return true;
 }
 
@@ -375,7 +395,7 @@ void main() {
 	// For now, I'm gonna put some test data in my dictionary.
 	// Once I have my code finding and running compiled words, then I'll add
 	// the : and ; words so users can add/edit (see my previous attempt for how)
-	strcpy(dictionary, "\trot 2 roll\n\t-rot rot rot\n\tsquare dup *\n");
+	strcpy(dictionary, "\trot 2 roll \t-rot rot rot \tsquare dup * \t2drop drop drop \t");
 	
 	// Set the background color to black and the text color to white
 	#if VIC20
@@ -417,7 +437,7 @@ void main() {
 			
 			// And push it to the return stack
 			if (i >= 0 && input[i] != ' ') {
-				rs[rsp] = input + i;
+				rs[rsp] = (uint16_t)(input + i);
 				rsp++;
 			}
 		}
