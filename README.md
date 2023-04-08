@@ -24,6 +24,17 @@ Forth has a rich history of cheesy puns.  With different variants having names l
 
 But I'm also fluent in Spanish, and especially familiar with Caribbean (Cuban, Puerto Rican etc.) Spanish slang.  So if you would ask me, how would you translate kingly-sounding phrases like "Let us go Forth" or "I shall go forth"... the translation is obvious.  In "proper" Spanish, Forth would be "para adelante".  But in some places, that get shortened to "para'delante" or (more commonly) just "pa'lante".  This of course reminds me of a few of my favorite songs: [Vamos Pa'lante!](https://www.youtube.com/watch?v=G7TDR9CpQOc), [Voy Pa'lante](https://www.youtube.com/watch?v=hK2wySMe_jc) and even [No Vuelvo Pa'tras](https://www.youtube.com/watch?v=Slng3XclDQ8) ("pa'tras" being the opposite of pa'lante - rough translation is "I'm not turning back").  Asi que vamos pa'lante! :)
 
+## Road map to version 1.0
+
+The main things I want Pa'lante to have are:
+
+* **The compiler:** This is what I hope to add in version 0.2
+* **Branching:** Words like `IF` and `DO` and `BEGIN`
+* **File I/O:** Technically already possible with binary opcodes Assembly and `EXECUTE`, but who wants to do that?  I'd like `LOAD`, `SAVE` and (bytes allowing) `VERIFY` like BASIC has.
+
+Once it can do all these things, it'll be good enough to be considered a useful development tool.  Faster than BASIC, easier than Assembly, and it runs right on the machine.  At least, that's the dream. :D
+
+
 ## Available words
 
 I'm not going to dive into how Forth works - the link in the "overview" section is really the best place to start.  But what I will do is list the words Pa'lante supports, and extra explanation if they are not "standard" Forth words (like loading/saving files on disk, which of course will be very different on Commodore machines than anything else).

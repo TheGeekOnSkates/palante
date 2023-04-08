@@ -61,6 +61,9 @@ uint16_t goWhere;				// Used to make EXECUTE work
 uint8_t status = STATUS_OK;		// System status
 char input[INPUT_SIZE];			// User input buffer
 char* ip;						// Interpreter pointer
+char dictionary[1024];			// The list of user-defined words
+bool compiling = false;			// Whether or not we're compiling
+
 
 
 // -----------------------------------------------------------------------------
@@ -319,7 +322,6 @@ void type() {
 
 
 
-
 // -----------------------------------------------------------------------------
 // TO BE SORTED
 // -----------------------------------------------------------------------------
@@ -343,8 +345,37 @@ bool IsNumber(char* word) {
 	return true;
 }
 
+bool InDictionary() {
+	// Build a string: \t + current word + \n
+	static char wordName[82], * temp;
+	static uint16_t i;
+	memset(wordName, 0, 82);
+	wordName[0] = '\t';
+	temp = ip;
+	while(temp[0] != ' ' && temp[0] != '\0') {
+		wordName[i + 1] = temp[0];
+		i++; temp++;
+	}
+	i++;
+	wordName[i] = ' ';
+	
+	// If this combo is not found in the dictionary, do nothing
+	temp = strstr(dictionary, wordName);
+	if (temp == NULL) return false;
+	
+	// for now, just
+	temp += i;
+	printf("temp = \"%s\"\n", temp);
+	return true;
+}
+
 void main() {
 	static int8_t i;
+	
+	// For now, I'm gonna put some test data in my dictionary.
+	// Once I have my code finding and running compiled words, then I'll add
+	// the : and ; words so users can add/edit (see my previous attempt for how)
+	strcpy(dictionary, "\trot 2 roll\n\t-rot rot rot\n\tsquare dup *\n");
 	
 	// Set the background color to black and the text color to white
 	#if VIC20
@@ -359,7 +390,7 @@ void main() {
 	asm("LDA #1");
 	asm("STA 646");
 	#endif
-	printf("%cpa'lante 0.1\n\n", 147);
+	printf("%cpa'lante 0.2\n\n", 147);
 	while(true) {
 		// Get user input
 		memset(input, 0, INPUT_SIZE);
@@ -545,6 +576,9 @@ void main() {
 				dsp++;
 				continue;
 			}
+			
+			// If it's not a number, is it in the dictionary?
+			if (InDictionary()) continue;
 			
 			// If at any point there's an error, stop running
 			if (status > STATUS_COMPILED) {
