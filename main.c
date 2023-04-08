@@ -327,6 +327,57 @@ void type() {
 // -----------------------------------------------------------------------------
 
 /**
+ * Shifts all pointers in the return stack, freeing the one at the bottom.
+ * I'm not even sure how to explain this correctly.  If I expressed the return
+ * stack like we normally do with the data stack, let's say the pointers are
+ * "1 2 3" (they would never be that, but just for example).  What this does is
+ * shift the *bottom* of the stack, so it would be "1 1 2 3".  And in fact... I
+ * kind of think this code might be to blame for the confusion below (see my
+ * long comments on InDictionary() below).  So..... think-think-think...........
+ * 
+ * let's go back to my example of:
+ * 
+ * 				8 SQUARE .
+ * 
+ * So after the first part, the return stack reads:
+ * 
+ * 0. 8
+ * 1. SQUARE
+ * 2. .
+ * 
+ * So now it runs...
+ * 
+ * 1. It sees 8 and pushes it on the stack.  Return stack is now:
+ * 		0. SQUARE
+ * 		1. .
+ * 2. It sees SQUARE, so...
+ * 		a. It builds the string "\tSQUARE "
+ * 		b. It finds a pointer to "\tSQUARE " in the dictionary
+ * 		c. If calls ShiftStack; The return stack should now be:
+ * 			0. SQUARE (current location of ip, this gets "eaten" in the loop)
+ * 			1. SQUARE
+ * 			2. .
+ * 		So really, a better description would be:
+ * 			0. SQUARE
+ * 			1. .
+ * 		d. It replaces space zero with DUP
+ * 		e. It calls ShiftStack again.  Now return stack should be:
+ * 			0. DUP
+ * 			1. DUP
+ * 			2. .
+ * 		F. It replaces a DUP with *.... okay here be dragons.... is it now like
+ * 			this?  * DUP .   No, it can't be, cuz the . is getting called.
+ * 
+ * agggggggg too tired.  It's too late for mind-grinding algorithms and lame
+ * brain-bending challenges.  Friday's over.  I'm calling it a night. :P
+ */
+void ShiftStack() {
+	static uint16_t i;
+	rsp++;
+	for (i=rsp; i>0; i--) rs[i] = rs[i - 1];
+}
+
+/**
  * Checks if a string contains a signed whole number
  * (with or withou leading sign)
  * @param The string to be tested
@@ -344,6 +395,31 @@ bool IsNumber(char* word) {
 			return word[i] == ' ';
 	return true;
 }
+
+
+// **** LEFT OFF HERE ****
+// 
+// So... it looks like my ShiftStack() function is working.  Now
+// all words do what they should.  ROT and SQUARE and the others
+// all work as expected.  What doesn't is any words AFTER them.
+// For example, I can do this:
+//			8 SQUARE
+//			.
+//			64  ok
+// But if I try to do it all oneone line:
+//			8 SQUARE .
+// it prints "8 STACK UNDERFLOW" :(
+// 
+// 
+// 
+// 
+// Same deal if I do "1 2 3 ROT .S"; if I run ROT and then run
+// .S, I can see that ROT worked.  Sooooooooooo.......????????
+// At the moment I'm too tired to depuzzle.  My best guess is I
+// either have to do an extra ShiftStack or an i++ or something,
+// but all tinkering in those directions so far has not worked.
+// Attack it another weekend with a fresh brain. :D
+// 
 
 bool InDictionary() {
 	// Build a string: \t + current word + space
@@ -374,11 +450,11 @@ bool InDictionary() {
 		}
 		
 		// If we're at the end of the word, we're done
-		while(temp[0] == '\t') break;
+		if(temp[0] == '\t') break;
 		
 		// Push a pointer to the first character of the word to the return stack
-		rs[rsp] = (uint16_t)temp;
-		rsp++;
+		ShiftStack();
+		rs[0] = (uint16_t)temp;
 		
 		// And move past any non-space, non-Tab characters (Tab is a delimiter)
 		while(temp[0] != ' ' && temp[0] != '\t') {
@@ -598,7 +674,9 @@ void main() {
 			}
 			
 			// If it's not a number, is it in the dictionary?
-			if (InDictionary()) continue;
+			if (InDictionary()) {
+				continue;
+			}
 			
 			// If at any point there's an error, stop running
 			if (status > STATUS_COMPILED) {
