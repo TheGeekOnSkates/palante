@@ -1,5 +1,18 @@
+# TO-DO's for 0.2
+
+* Now that the compiler works, finish getting it to redefine words
+* And like I said, I'd like to replace the word `COMPILER` with `SEE`;
+* Beyond the compiler....
+	- If I'm gonna do `SEE`, may as well use the same technique to implement `CHAR`...
+	- I'd kinda like to add `."`, maybe `S"` and `COUNT` and fix `TYPE`
+	- Also, I could save a few bytes by adding `ABORT` - there are 3-4 places it would make sense to do that, but not a big deal
+* Update my docs :)
+
+
+--------------------------------------------------------------------------------
+
 # Pa'lante
-Version 0.1
+Version 0.2
 
 ## Overview
 
@@ -10,6 +23,7 @@ Pa'lante is a [Forth](https://www.forth.com/starting-forth/) interpreter for the
 * The C64 (starting in version 0.1)
 * The C128 (planned)
 * The Plus4 (planned)
+* The CBM-II (planned)
 * The Commander X16 (planned)
 * And when it's done, it might also be portable to other 8-bit systems (I'd kind of like to see Apple II and Atari builds, for example)
 
@@ -31,6 +45,7 @@ The main things I want Pa'lante to have are:
 * **The compiler:** This is what I hope to add in version 0.2
 * **Branching:** Words like `IF` and `DO` and `BEGIN`
 * **File I/O:** Technically already possible with binary opcodes Assembly and `EXECUTE`, but who wants to do that?  I'd like `LOAD`, `SAVE` and (bytes allowing) `VERIFY` like BASIC has.
+* **An escape mechanism:**  In durexForth, I can hit RUN/STOP to exit an infinite loop; I'd kinda like to see if there's an interrupt I can listen for, and then if it's triggered set dsp and rsp to zero.
 
 Once it can do all these things, it'll be good enough to be considered a useful development tool.  Faster than BASIC, easier than Assembly, and it runs right on the machine.  At least, that's the dream. :D
 
@@ -48,7 +63,7 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
 * **Strings:** `TYPE`
-* **Misc:** `BYE` `EXECUTE`
+* **Misc:** `ACCEPT` `BYE` `EXECUTE`
 
 
 ### Words I'd like to add:

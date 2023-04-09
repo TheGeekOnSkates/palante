@@ -40,7 +40,7 @@
 
 #define INPUT_SIZE 80
 #define STACK_SIZE 256
-#define DICT_SIZE 2048
+#define DICT_SIZE 4096
 
 
 // Status codes
@@ -49,6 +49,7 @@
 #define STATUS_COMPILED			1		// All words compiled successfully
 #define STATUS_STACK_UNDERFLOW	2		// Stack underflow error
 #define STATUS_DIV_BY_ZERO		3		// Division by 0 error
+#define STATUS_UNKNOWN_WORD		4		// Unknown word error
 
 
 
@@ -63,7 +64,9 @@ uint8_t status = STATUS_OK;		// System status
 char input[INPUT_SIZE];			// User input buffer
 char* ip;						// Interpreter pointer
 char dictionary[DICT_SIZE];		// The list of user-defined words
-bool compiling = false;			// Whether or not we're compiling
+bool compiling = false,			// Whether or not we're compiling
+	isName = false;				// Set to true if the next word is the name of a
+								// word in a : definition
 
 
 
@@ -362,6 +365,42 @@ void accept() {
 // TO BE SORTED
 // -----------------------------------------------------------------------------
 
+void clearCompiledWord() {
+	static char start[83];
+	static char* definition, * end;
+	
+	// Build the start of the definition ("\t " + word)
+	memset(start, 0, 81);
+	start[0] = '\t';
+	strcat(start, ip);
+	
+	// NULL the end of the test string
+	definition = strchr(start, ' ');
+	definition[0] = '\0';
+	definition = NULL;
+	
+	// If that string is not in our dictionary, do nothing
+	definition = strstr(dictionary, start);
+	if (definition == NULL) return;
+	
+	// Otherwise, find the end of that definition
+	end = strstr(definition + 1, "\t");
+	if (end == NULL) return;	// Should never happen, but don't crash if it does
+	
+	// Copy over it and delete everything after it
+	// 
+	// **** LEFT OFF HERE ****
+	// 
+	// Here's where we once again get to Hacky McMathski's territory. :D
+	// I'm too tired to algorithmicize and depuzzle and play brain Tetris. :D
+	// But this is what needs to happen..... somehowz..... :)
+	strcpy(definition, end);
+	
+	// And let the user know what's up
+	start[0] = ' ';
+	printf("Redefined%s\n", start);
+}
+
 /**
  * Checks if a string contains a signed whole number
  * (with or withou leading sign)
@@ -467,6 +506,8 @@ void main() {
 			
 			// If we're compiling, keep compiling unless it's a semicolon
 			if (compiling) {
+				if (isName) clearCompiledWord();
+				isName = false;
 				if (StringStartsWith(ip, "; ")) {
 					strcat(dictionary, "\t");
 					compiling = false;
@@ -495,7 +536,7 @@ void main() {
 
 			// Handle Forth words
 			if (StringStartsWith(ip, ": ")) {
-				compiling = true;
+				compiling = isName = true;
 				status = STATUS_COMPILED;
 				continue;
 			}
