@@ -22,7 +22,7 @@ Forth has a rich history of cheesy puns.  With different variants having names l
 * "BreakForth" (cuz Breakaway Forth doesn't sound as cool as Breakaway BASIC - a project I may pick up again someday... or not :D)
 * "Skate Forth" (which might end up being my web-based Forth - tho I may not need/want one anymore cuz someone already [beat me to it](https://brendanator.github.io/jsForth/)).
 
-But I'm also fluent in Spanish, and especially familiar with Caribbean (Cuban, Puerto Rican etc.) Spanish slang.  So if you would ask me, how would you translate kingly-sounding phrases like "Let us go Forth" or "I shall go forth"... the translation is obvious.  In "proper" Spanish, Forth would be "para adelante".  But in some places, that get shortened to "para'delante" or (more commonly) just "pa'lante".  This of course reminds me of a few of my favorite songs: [Vamos Pa'lante!](https://www.youtube.com/watch?v=G7TDR9CpQOc), [Voy Pa'lante](https://www.youtube.com/watch?v=hK2wySMe_jc) and even [No Vuelvo Pa'tras](https://www.youtube.com/watch?v=Slng3XclDQ8) ("pa'tras" being the opposite of pa'lante - rough translation is "I'm not turning back").  Asi que vamos pa'lante! :)
+But I'm also fluent in Spanish, and especially familiar with Caribbean (Cuban, Puerto Rican etc.) Spanish slang.  So if you would ask me, how would you translate kingly-sounding phrases like "Let us go Forth" or "I shall go forth"... the translation is obvious.  In "proper" Spanish, Forth would be "para adelante".  But in some places, that get shortened to "pa'delante" or (more commonly) just "pa'lante".  This of course reminds me of a few of my favorite songs: [Vamos Pa'lante!](https://www.youtube.com/watch?v=G7TDR9CpQOc), [Voy Pa'lante](https://www.youtube.com/watch?v=hK2wySMe_jc) and even [No Vuelvo Pa'tras](https://www.youtube.com/watch?v=Slng3XclDQ8) ("pa'tras" being the opposite of pa'lante - rough translation is "I'm not turning back").  Asi que vamos pa'lante! :)
 
 ## Road map to version 1.0
 
@@ -51,7 +51,27 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Misc:** `BYE` `EXECUTE`
 
 
+### Words I'd like to add:
+
+* Comments: `(` `)` and... `\` is a tricky one... Commodore keyboards don't have them... `#` maybe?  `//`?
+* `."` `S"` and `COUNT` (also, `TYPE` needs some work)
+
+
+
 ### Words only included in Pa'lante
 
-None yet - but I expect a `LOAD` and `SAVE` at least
+* None yet - but I expect a `LOAD` and `SAVE` at least.  Probably `S" MY-FILE,SEQ" 8 LOAD` and `S" @0:MY-FILE,SEQ" 8 SAVE` similar to BASIC.
 
+
+
+### Words that won't be written in native code, not available "out of the box"
+
+* I think the rest will be system-dependent and be loaded into disk files (so there'll probably be i.e. SID chip words for the C64 build, character set words for the VIC etc.).
+* And if I'm gonna do that, may as well add some more standard Forth words in disk files, like `2DROP` and `2SWAP` and `0=`
+
+
+
+### Words I don't plan to do anytime soon
+
+* `VARIABLE` and `CONSTANT`; because I can get the similar results with words that just push numbers on the stack (like `: RED 2 ;` and `: TEXT 646 ;` - I can do `RED TEXT C!` or `TEXT C@ .` like I would with a variable/constant).
+* `INCLUDE`, because Commodore's disk API is not like standard Forths; like I said, `LOAD` and `SAVE` will probably work more like in BASIC.

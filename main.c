@@ -40,6 +40,7 @@
 
 #define INPUT_SIZE 80
 #define STACK_SIZE 256
+#define DICT_SIZE 2048
 
 
 // Status codes
@@ -61,7 +62,7 @@ uint16_t goWhere;				// Used to make EXECUTE work
 uint8_t status = STATUS_OK;		// System status
 char input[INPUT_SIZE];			// User input buffer
 char* ip;						// Interpreter pointer
-char dictionary[1024];			// The list of user-defined words
+char dictionary[DICT_SIZE];		// The list of user-defined words
 bool compiling = false;			// Whether or not we're compiling
 
 
@@ -320,6 +321,41 @@ void type() {
 	dsp -= 2;
 }
 
+void accept() {
+	static int8_t i;
+	
+	// Get user input
+	memset(input, 0, INPUT_SIZE);
+	fgets(input, INPUT_SIZE, stdin);
+	
+	// Convert \n or Shift-space to a space for easier parsing
+	for (i=0; i<INPUT_SIZE; i++)
+		if (input[i] == '\n' || input[i] == 160) input[i] = ' ';
+	
+	// Push all the words the user typed onto the return stack
+	for (i=INPUT_SIZE - 1; i>-1; i--) {
+		
+		// Move past any unset chars
+		while (i>0 && input[i] == '\0') i--;
+		
+		// Move past any trailing spaces
+		while (i>=0 && input[i] == ' ') i--;
+		
+		// Move to the space before the start of the word (if there is one)
+		while (i>=0 && input[i] != ' ') i--;
+		
+		// If there is one, move up 1 char to go to the start of the word
+		if (i == -1 || input[i] == ' ') i++;
+		
+		// And push it to the return stack
+		if (i >= 0 && input[i] != ' ') {
+			rs[rsp] = (uint16_t)(input + i);
+			rsp++;
+		}
+	}
+	
+}
+
 
 
 // -----------------------------------------------------------------------------
@@ -390,12 +426,12 @@ bool InDictionary() {
 }
 
 void main() {
-	static int8_t i;
+	static uint16_t length;
 	
 	// For now, I'm gonna put some test data in my dictionary.
 	// Once I have my code finding and running compiled words, then I'll add
 	// the : and ; words so users can add/edit (see my previous attempt for how)
-	strcpy(dictionary, "\trot 2 roll \t-rot rot rot \tsquare dup * \t2drop drop drop \t");
+	strcpy(dictionary, "\trot 2 roll \t-rot rot rot \t2dup over over \t2drop drop drop \t");
 	
 	// Set the background color to black and the text color to white
 	#if VIC20
@@ -412,44 +448,57 @@ void main() {
 	#endif
 	printf("%cpa'lante 0.2\n\n", 147);
 	while(true) {
-		// Get user input
-		memset(input, 0, INPUT_SIZE);
-		fgets(input, INPUT_SIZE, stdin);
-		
-		// Convert \n or Shift-space to a space for easier parsing
-		for (i=0; i<INPUT_SIZE; i++)
-			if (input[i] == '\n' || input[i] == 160) input[i] = ' ';
-		
-		// Push all the words the user typed onto the return stack
-		for (i=INPUT_SIZE - 1; i>-1; i--) {
-			
-			// Move past any unset chars
-			while (i>0 && input[i] == '\0') i--;
-			
-			// Move past any trailing spaces
-			while (i>=0 && input[i] == ' ') i--;
-			
-			// Move to the space before the start of the word (if there is one)
-			while (i>=0 && input[i] != ' ') i--;
-			
-			// If there is one, move up 1 char to go to the start of the word
-			if (i == -1 || input[i] == ' ') i++;
-			
-			// And push it to the return stack
-			if (i >= 0 && input[i] != ' ') {
-				rs[rsp] = (uint16_t)(input + i);
-				rsp++;
-			}
-		}
+		// Parse user input
+		accept();
 		
 		// Run it, one word at a time
-		status = STATUS_OK;
+		if (!compiling) status = STATUS_OK;
 		while(rsp > 0) {
+			// If the status is not OK or COMPILED, exit the loop
+			if (status > STATUS_COMPILED) {
+				dsp = 0;
+				rsp = 0;
+				break;
+			}
+			
 			// Pop the return stack to the input pointer
 			rsp--;
 			ip = (char*)rs[rsp];
+			
+			// If we're compiling, keep compiling unless it's a semicolon
+			if (compiling) {
+				if (StringStartsWith(ip, "; ")) {
+					strcat(dictionary, "\t");
+					compiling = false;
+					status = STATUS_OK;
+				}
+				else {
+					length = strlen(dictionary);
+					while(ip[0] != ' ') {
+						dictionary[length] = ip[0];
+						length++;
+						ip++;
+					}
+					dictionary[length] = ' ';
+				}
+				continue;
+			}
+			
+			// This is not a standard Forth word, but a tutorial I followed once
+			// (the one I learned this compiler strategy from) had it and I like
+			// it, so it works for now (lol).  Maybe I'll replace it with "SEE"
+			// later... or maybe I'll just leave it :)
+			if (StringStartsWith(ip, "compiler ")) {
+				printf("%s", dictionary);
+				continue;
+			}
 
 			// Handle Forth words
+			if (StringStartsWith(ip, ": ")) {
+				compiling = true;
+				status = STATUS_COMPILED;
+				continue;
+			}
 			if (StringStartsWith(ip, "= ")) {
 				equals();
 				continue;
@@ -508,6 +557,10 @@ void main() {
 			}
 			if (StringStartsWith(ip, "mod ")) {
 				mod();
+				continue;
+			}
+			if (StringStartsWith(ip, "accept ")) {
+				accept();
 				continue;
 			}
 			if (StringStartsWith(ip, "and ")) {
