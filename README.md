@@ -58,12 +58,12 @@ I'm not going to dive into how Forth works - the link in the "overview" section 
 
 If you know Forth, these do what you think they do. 😆  Note that they are case-sensitive - that is, they're lowercase if you're using the lowercase character set, or upper case if you're using that character set.  I used uppercase in my docs just as a convention, but by default they will be lowercase (not sure how I can fix that - it's a compiler thing).
 
-* **Memory:** `@` `!` `@` `!`
+* **Memory:** `C@` `C!` `@` `!`
 * **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR` `INVERT` `NEGATE`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
 * **Strings:** `TYPE`
-* **Misc:** `ACCEPT` `BYE` `EXECUTE`
+* **Misc:** `ACCEPT` `BYE` `EXECUTE` `NEXT`
 
 
 ### Words I'd like to add:

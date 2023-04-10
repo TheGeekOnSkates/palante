@@ -61,7 +61,8 @@ int16_t ds[STACK_SIZE], dsp,	// Data stack and its pointer
 	rs[STACK_SIZE], rsp;		// Return stack and its pointer
 uint16_t goWhere;				// Used to make EXECUTE work
 uint8_t status = STATUS_OK;		// System status
-char input[INPUT_SIZE];			// User input buffer
+char input[INPUT_SIZE],			// User input buffer
+	redefined[81];				// If redefining a word
 char* ip;						// Interpreter pointer
 char dictionary[DICT_SIZE];		// The list of user-defined words
 bool compiling = false,			// Whether or not we're compiling
@@ -356,7 +357,11 @@ void accept() {
 			rsp++;
 		}
 	}
-	
+}
+
+void next() {
+	rsp--;
+	ip = (char*)rs[rsp];
 }
 
 
@@ -366,39 +371,74 @@ void accept() {
 // -----------------------------------------------------------------------------
 
 void clearCompiledWord() {
-	static char start[83];
-	static char* definition, * end;
+	static char* definition;
+	static uint16_t i = 0;
 	
-	// Build the start of the definition ("\t " + word)
-	memset(start, 0, 81);
-	start[0] = '\t';
-	strcat(start, ip);
+	// Build the start of the definition ("\n" + the name of the word)
+	memset(redefined, 0, 81);
+	redefined[0] = '\n';
+	while(ip[i] == ' ') i++;
+	for (; i<81; i++) {
+		if (ip[i] == ' ') break;
+		redefined[i + 1] = ip[i];
+	}
 	
-	// NULL the end of the test string
-	definition = strchr(start, ' ');
-	definition[0] = '\0';
-	definition = NULL;
+	// Check if the word is already in the dictionary
+	definition = strstr(dictionary, redefined);
+	if (definition == NULL) return;
+	
+	// If so, erase it
+	while(definition[0] != '\n') {
+		definition[0] = definition[1];
+		definition++;
+	}
+	// The above works, in that it lets me redefine words, but remnants of the
+	// old word stay in the dictionary.  Deleting this "garbage" is gonna be WAY
+	// more annoying a task than I first thought.  And again, I am too tired to
+	// depuzzle.  My algo-rhythm is out of sync. :D
+	
+	
+	/*
+	static char* definition;	//, * end;
+	static uint16_t i;
 	
 	// If that string is not in our dictionary, do nothing
-	definition = strstr(dictionary, start);
+	definition = NULL;
+	definition = strstr(dictionary, redefined);
 	if (definition == NULL) return;
 	
 	// Otherwise, find the end of that definition
-	end = strstr(definition + 1, "\t");
+	end = strstr(definition + 1, "\n");
 	if (end == NULL) return;	// Should never happen, but don't crash if it does
 	
-	// Copy over it and delete everything after it
-	// 
-	// **** LEFT OFF HERE ****
-	// 
-	// Here's where we once again get to Hacky McMathski's territory. :D
-	// I'm too tired to algorithmicize and depuzzle and play brain Tetris. :D
-	// But this is what needs to happen..... somehowz..... :)
-	strcpy(definition, end);
+	// This worked great... if I were writing SEE :)
+	// Hang onto it for later :)
+	while(definition != end) {
+		printf("%c", definition[0]);
+		definition++;
+	}
+	
+	// Surprisingly... this strcpy seems to work...
+	// But then.... why is other junk getting stuck after it?
+	// What is the "other junk" to begin with?
+	//strcpy(definition, end);
+	
+	
+	
+	printf("<%s>", dictionary);
 	
 	// And let the user know what's up
-	start[0] = ' ';
-	printf("Redefined%s\n", start);
+	//
+	// **** NEXT PROBLEM ****
+	// 
+	// It souldn't do this immediately; it should wait till the user enters a ;
+	// (so mabye make the char * above a global variable and print this message
+	// and clear its contents on ; to fix that
+	/*
+	redefined[0] = ' ';
+	printf("Redefined%s\n", redefined);
+	redefined[0] = '\0';
+	*/
 }
 
 /**
@@ -426,11 +466,11 @@ bool IsNumber(char* word) {
  * @returns True if the word is in the dictionary, false if it isn't
  */
 bool InDictionary() {
-	// Build a string: \t + current word + space
+	// Build a string: \n + current word + space
 	static char wordName[82], * temp;
 	static uint16_t i;
 	memset(wordName, 0, 82);
-	wordName[0] = '\t';
+	wordName[0] = '\n';
 	temp = ip; i = 0;
 	while(temp[0] != ' ' && temp[0] != '\n') {
 		wordName[i + 1] = temp[0];
@@ -447,14 +487,14 @@ bool InDictionary() {
 	// definition onto the return stack.  To get there, I need to do like I did
 	// in the main loop.  First, move to the end of the definition:
 	temp++;
-	while(temp[0] != '\t') temp++;	// End of the definition
-	temp--;		// so it's not at the closing \t anymore
+	while(temp[0] != '\n') temp++;	// End of the definition
+	temp--;		// so it's not at the closing \n anymore
 	
 	// Now again, like I did there, work backward till it reaches the word in ip
-	while(temp[0] != '\t') {
+	while(temp[0] != '\n') {
 		while(temp[0] == ' ') temp--;
-		while(temp[0] != ' ' && temp[0] != '\t') temp--;
-		if (temp[0] == '\t') break;
+		while(temp[0] != ' ' && temp[0] != '\n') temp--;
+		if (temp[0] == '\n') break;
 		temp++;
 		rs[rsp] = (uint16_t)temp;
 		rsp++;
@@ -470,7 +510,7 @@ void main() {
 	// For now, I'm gonna put some test data in my dictionary.
 	// Once I have my code finding and running compiled words, then I'll add
 	// the : and ; words so users can add/edit (see my previous attempt for how)
-	strcpy(dictionary, "\trot 2 roll \t-rot rot rot \t2dup over over \t2drop drop drop \t");
+	strcpy(dictionary, "\nrot 2 roll \n-rot rot rot \n2dup over over \n2drop drop drop \n");
 	
 	// Set the background color to black and the text color to white
 	#if VIC20
@@ -501,15 +541,14 @@ void main() {
 			}
 			
 			// Pop the return stack to the input pointer
-			rsp--;
-			ip = (char*)rs[rsp];
+			next();
 			
 			// If we're compiling, keep compiling unless it's a semicolon
 			if (compiling) {
 				if (isName) clearCompiledWord();
 				isName = false;
 				if (StringStartsWith(ip, "; ")) {
-					strcat(dictionary, "\t");
+					strcat(dictionary, "\n");
 					compiling = false;
 					status = STATUS_OK;
 				}
@@ -530,7 +569,7 @@ void main() {
 			// it, so it works for now (lol).  Maybe I'll replace it with "SEE"
 			// later... or maybe I'll just leave it :)
 			if (StringStartsWith(ip, "compiler ")) {
-				printf("%s", dictionary);
+				printf("\n%s", dictionary);
 				continue;
 			}
 
@@ -596,10 +635,6 @@ void main() {
 				divide();
 				continue;
 			}
-			if (StringStartsWith(ip, "mod ")) {
-				mod();
-				continue;
-			}
 			if (StringStartsWith(ip, "accept ")) {
 				accept();
 				continue;
@@ -647,8 +682,16 @@ void main() {
 				lshift();
 				continue;
 			}
+			if (StringStartsWith(ip, "mod ")) {
+				mod();
+				continue;
+			}
 			if (StringStartsWith(ip, "negate ")) {
 				negate();
+				continue;
+			}
+			if (StringStartsWith(ip, "next ")) {
+				mod();
 				continue;
 			}
 			if (StringStartsWith(ip, "or ")) {
@@ -694,6 +737,9 @@ void main() {
 			// If it's not a number, is it in the dictionary?
 			if (InDictionary()) continue;
 			
+			// If it's not in the dictionary, it' an error
+			status = STATUS_UNKNOWN_WORD;
+			
 			// If at any point there's an error, stop running
 			if (status > STATUS_COMPILED) {
 				dsp = 0;
@@ -704,9 +750,13 @@ void main() {
 		
 		// And print the system status
 		switch(status) {
-			case STATUS_COMPILED: printf("compiled"); break;
+			case STATUS_COMPILED: printf("  compiled"); break;
 			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
 			case STATUS_DIV_BY_ZERO: printf("division by zero"); break;
+			case STATUS_UNKNOWN_WORD:
+				strchr(ip, ' ')[0] = '\0';
+				printf("unknown word \"%s\"", ip);
+				break;
 			default: printf("  ok");
 		}
 		printf("\n");
