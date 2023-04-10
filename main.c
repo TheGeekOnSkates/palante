@@ -371,7 +371,7 @@ void next() {
 // -----------------------------------------------------------------------------
 
 void clearCompiledWord() {
-	static char* definition;
+	static char* definition, * temp;
 	static uint16_t i = 0;
 	
 	// Build the start of the definition ("\n" + the name of the word)
@@ -388,14 +388,18 @@ void clearCompiledWord() {
 	if (definition == NULL) return;
 	
 	// If so, erase it
-	while(definition[0] != '\n') {
-		definition[0] = definition[1];
-		definition++;
+	while(definition[1] != '\n') {
+		temp = definition + 1;
+		while(temp[0] != '\0') {
+			temp[0] = temp[1];
+			temp++;
+		}
 	}
-	// The above works, in that it lets me redefine words, but remnants of the
-	// old word stay in the dictionary.  Deleting this "garbage" is gonna be WAY
-	// more annoying a task than I first thought.  And again, I am too tired to
-	// depuzzle.  My algo-rhythm is out of sync. :D
+	
+	// The above works... the first time.  This is clearly gonna be one of those
+	// mind-grinding, gimme-a-few-months-and-a-good-pizza-and-maybe-eventually
+	// puzzles that only by God's grace will I ever win.  Right now, still too
+	// tired to depuzzle this further.  My algo-rhythm is out of sync. :D
 	
 	
 	/*
