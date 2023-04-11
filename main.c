@@ -50,7 +50,7 @@
 #define STATUS_STACK_UNDERFLOW	2		// Stack underflow error
 #define STATUS_DIV_BY_ZERO		3		// Division by 0 error
 #define STATUS_UNKNOWN_WORD		4		// Unknown word error
-
+#define STATUS_RS_UNDERFLOW		5		// Return stack underflow error
 
 
 // -----------------------------------------------------------------------------
@@ -365,6 +365,21 @@ void next() {
 	ip = (char*)rs[rsp];
 }
 
+void dotQuote() {
+	static uint8_t i;
+	if (!rsp) { status = STATUS_RS_UNDERFLOW; return; }
+	while(rs) {
+		next();
+		i = 0;
+		while(ip[i] != ' ') {
+			if (ip[i] == '"') return;
+			putchar(ip[i]);
+			i++;
+		}
+		putchar(' ');
+	}
+}
+
 
 
 // -----------------------------------------------------------------------------
@@ -600,6 +615,10 @@ void main() {
 				printStack();
 				continue;
 			}
+			if (StringStartsWith(ip, ".\" ")) {
+				dotQuote();
+				continue;
+			}
 			if (StringStartsWith(ip, "+ ")) {
 				add();
 				continue;
@@ -734,6 +753,7 @@ void main() {
 			case STATUS_COMPILED: printf("  compiled"); break;
 			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
 			case STATUS_DIV_BY_ZERO: printf("division by zero"); break;
+			case STATUS_RS_UNDERFLOW: printf("return stack underflow"); break;
 			case STATUS_UNKNOWN_WORD:
 				strchr(ip, ' ')[0] = '\0';
 				printf("unknown word \"%s\"", ip);

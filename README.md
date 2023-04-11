@@ -62,14 +62,14 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR` `INVERT` `NEGATE`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
-* **Strings:** `TYPE`
-* **Misc:** `ACCEPT` `BYE` `EXECUTE` `NEXT`
+* **Strings:** `."` `TYPE`
+* **Misc:** `:` `;` `ACCEPT` `BYE` `EXECUTE` `NEXT`
 
 
 ### Words I'd like to add:
 
 * Comments: `(` `)` and... `\` is a tricky one... Commodore keyboards don't have them... `#` maybe?  `//`?
-* `."` `S"` and `COUNT` (also, `TYPE` needs some work)
+* `S"` and `COUNT` (also, `TYPE` needs some work)
 
 
 
