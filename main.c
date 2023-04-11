@@ -371,7 +371,7 @@ void next() {
 // -----------------------------------------------------------------------------
 
 void clearCompiledWord() {
-	static char* definition, * temp;
+	static char* start;
 	static uint16_t i = 0;
 	
 	// Build the start of the definition ("\n" + the name of the word)
@@ -384,65 +384,19 @@ void clearCompiledWord() {
 	}
 	
 	// Check if the word is already in the dictionary
-	definition = strstr(dictionary, redefined);
-	if (definition == NULL) return;
+	start = strstr(dictionary, redefined);
+	if (start == NULL) return;
 	
-	// If so, erase it
-	while(definition[1] != '\n') {
-		temp = definition + 1;
-		while(temp[0] != '\0') {
-			temp[0] = temp[1];
-			temp++;
-		}
-	}
-	
-	// The above works... the first time.  This is clearly gonna be one of those
-	// mind-grinding, gimme-a-few-months-and-a-good-pizza-and-maybe-eventually
-	// puzzles that only by God's grace will I ever win.  Right now, still too
-	// tired to depuzzle this further.  My algo-rhythm is out of sync. :D
-	
-	
-	/*
-	static char* definition;	//, * end;
-	static uint16_t i;
-	
-	// If that string is not in our dictionary, do nothing
-	definition = NULL;
-	definition = strstr(dictionary, redefined);
-	if (definition == NULL) return;
-	
-	// Otherwise, find the end of that definition
-	end = strstr(definition + 1, "\n");
-	if (end == NULL) return;	// Should never happen, but don't crash if it does
-	
-	// This worked great... if I were writing SEE :)
-	// Hang onto it for later :)
-	while(definition != end) {
-		printf("%c", definition[0]);
-		definition++;
-	}
-	
-	// Surprisingly... this strcpy seems to work...
-	// But then.... why is other junk getting stuck after it?
-	// What is the "other junk" to begin with?
-	//strcpy(definition, end);
-	
-	
-	
-	printf("<%s>", dictionary);
-	
-	// And let the user know what's up
-	//
-	// **** NEXT PROBLEM ****
-	// 
-	// It souldn't do this immediately; it should wait till the user enters a ;
-	// (so mabye make the char * above a global variable and print this message
-	// and clear its contents on ; to fix that
-	/*
-	redefined[0] = ' ';
-	printf("Redefined%s\n", redefined);
-	redefined[0] = '\0';
-	*/
+	// Again... dog gone it!  Puzzly wuzzly was a bear... :PPPPPP
+	// It works..... the first time.  So lame.  So freakin' hard.
+	// Lord, is it simply not meant to be?  Am I trying to do something You,
+	// in your infinite wisdom and ultimate awesomeness, can't let me do?
+	// Your will, not mine, be done, oh my King.  But if it's not too big an ask
+	// (not that anything is too big for You) I'd really like to beat this super
+	// aggravating logic puzzle!  I can only do it with YOur help.
+	i = 1;
+	while(start[i] != '\n') i++;
+	memmove(start, start + i, strlen(dictionary) + 1);
 }
 
 /**
