@@ -321,7 +321,7 @@ void type() {
 	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
 	string = (char*)ds[dsp - 2];
 	for (j=0; j<ds[dsp - 1] * 2; j++) {
-		printf("%c", string[j]);
+		printf("%c", string[j] + 64);
 	}
 	dsp -= 2;
 }
@@ -377,6 +377,18 @@ void dotQuote() {
 			i++;
 		}
 		putchar(' ');
+	}
+}
+
+void count() {
+	static uint16_t ptr;
+	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
+	ptr = ds[dsp - 1];
+	ds[dsp - 1] = 0;
+	while(true) {
+		if (!PEEK(ptr)) break;
+		ds[dsp - 1]++;
+		ptr++;
 	}
 }
 
@@ -652,6 +664,10 @@ void main() {
 			}
 			if (StringStartsWith(ip, "c@ ")) {
 				cfetch();
+				continue;
+			}
+			if (StringStartsWith(ip, "count ")) {
+				count();
 				continue;
 			}
 			if (StringStartsWith(ip, "depth ")) {

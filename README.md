@@ -62,14 +62,18 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR` `INVERT` `NEGATE`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
-* **Strings:** `."` `TYPE`
+* **Strings:** `."` `COUNT` `TYPE`
 * **Misc:** `:` `;` `ACCEPT` `BYE` `EXECUTE` `NEXT`
 
 
-### Words I'd like to add:
+### Before I call 0.2 done...
+
+* `S"` and (also, `TYPE` needs some work)
+
+
+### Words I'd like to add in 0.3:
 
 * Comments: `(` `)` and... `\` is a tricky one... Commodore keyboards don't have them... `#` maybe?  `//`?
-* `S"` and `COUNT` (also, `TYPE` needs some work)
 
 
 
