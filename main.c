@@ -66,6 +66,7 @@ char input[INPUT_SIZE],			// User input buffer
 char* ip;						// Interpreter pointer
 char dictionary[DICT_SIZE];		// The list of user-defined words
 bool compiling = false,			// Whether or not we're compiling
+	redefining = false,			// Whether or not we're redefining a word
 	isName = false;				// Set to true if the next word is the name of a
 								// word in a : definition
 
@@ -370,6 +371,10 @@ void next() {
 // TO BE SORTED
 // -----------------------------------------------------------------------------
 
+/**
+ * At the beginning of the compile process, this deletes any previous definition
+ * of the word (kind of like FORGET in some Forths.  Hmmmm...) :D
+ */
 void clearCompiledWord() {
 	static char* start;
 	static uint16_t i = 0;
@@ -377,26 +382,39 @@ void clearCompiledWord() {
 	// Build the start of the definition ("\n" + the name of the word)
 	memset(redefined, 0, 81);
 	redefined[0] = '\n';
+	i = 0; while (ip[i] == ' ') i++;
 	while(ip[i] == ' ') i++;
 	for (; i<81; i++) {
-		if (ip[i] == ' ') break;
 		redefined[i + 1] = ip[i];
+		if (ip[i] == ' ') break;
 	}
 	
 	// Check if the word is already in the dictionary
 	start = strstr(dictionary, redefined);
 	if (start == NULL) return;
 	
-	// Again... dog gone it!  Puzzly wuzzly was a bear... :PPPPPP
-	// It works..... the first time.  So lame.  So freakin' hard.
-	// Lord, is it simply not meant to be?  Am I trying to do something You,
-	// in your infinite wisdom and ultimate awesomeness, can't let me do?
-	// Your will, not mine, be done, oh my King.  But if it's not too big an ask
-	// (not that anything is too big for You) I'd really like to beat this super
-	// aggravating logic puzzle!  I can only do it with YOur help.
-	i = 1;
-	while(start[i] != '\n') i++;
-	memmove(start, start + i, strlen(dictionary) + 1);
+	// If it gets here, we ARE redefining a word
+	redefining = true;
+	
+	// Write over the old definition
+	start++;
+	while(start[0] != '\n') {
+		i = 0;
+		while(start[i] != '\0') {
+			start[i] = start[i + 1];
+			i++;
+		}
+	}
+	
+	// The code above leaves us with a double \n, which makes the "compiler"
+	// word a bit less useful and wasts bytes users could use for their code.
+	// So jump thru that hoop one more time (maybe make this an function in the
+	// future - but right now... IT WORKS!  YES!!!  Thank you Lord! :)
+	i = 0;
+	while(start[i] != '\0') {
+		start[i] = start[i + 1];
+		i++;
+	}
 }
 
 /**
@@ -509,6 +527,11 @@ void main() {
 					strcat(dictionary, "\n");
 					compiling = false;
 					status = STATUS_OK;
+					if (redefining) {
+						redefined[0] = ' ';
+						printf("Redefined%s\n", redefined);
+					}
+					redefining = false;
 				}
 				else {
 					length = strlen(dictionary);
