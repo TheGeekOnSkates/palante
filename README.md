@@ -21,10 +21,10 @@ Pa'lante is a [Forth](https://www.forth.com/starting-forth/) interpreter for the
 * The Commodore PET (starting in version 0.0)
 * The VIC-20 (starting in version 0.1, requires 35K expansion, though if I could decrypt their config-language I might get it working on other VIC setups)
 * The C64 (starting in version 0.1)
-* The C128 (planned)
-* The Plus4 (planned)
-* The CBM-II (planned)
-* The Commander X16 (planned)
+* The C128 (starting in version 0.2)
+* The Plus4 (starting in version 0.2)
+* The CBM-II (starting in version 0.2)
+* The Commander X16 (starting in version 0.2)
 * And when it's done, it might also be portable to other 8-bit systems (I'd kind of like to see Apple II and Atari builds, for example)
 
 My goal is to keep the memory size at under 16K.  Yes I could go lower, but the lower you go the less like Forth you get.  This Git repo is *NOT* my first attempt - oh, there have been many others - so I 've done my research.  I'm all too familiar with those who say you can build a Forth with just 3-4 instructions (`@` `!` and `EXECUTE`).  I could do that, easily, and it would run on just about anything.  But that's more like some kind of strange Assembly REPL than a Forth.  All you can do with that is store binary opcodes in memory and then jump to those addresses.  That's neat, but how do you define new words?  Where's the stack?  Where are `DUP` and `SWAP` and stuff that makes Forth... Forth?  Not that I expect Pa'lante to be fully ANS Forth standard compliant, not that it's gonna have a zillion words out of the box, but I want it to be something a programmer who knows Forth can look at and easily be able to pick up.
@@ -42,10 +42,8 @@ But I'm also fluent in Spanish, and especially familiar with Caribbean (Cuban, P
 
 The main things I want Pa'lante to have are:
 
-* **The compiler:** This is what I hope to add in version 0.2
-* **Branching:** Words like `IF` and `DO` and `BEGIN`
-* **File I/O:** Technically already possible with binary opcodes Assembly and `EXECUTE`, but who wants to do that?  I'd like `LOAD`, `SAVE` and (bytes allowing) `VERIFY` like BASIC has.
-* **An escape mechanism:**  In durexForth, I can hit RUN/STOP to exit an infinite loop; I'd kinda like to see if there's an interrupt I can listen for, and then if it's triggered set dsp and rsp to zero.
+* **File I/O:** Planned for 0.3.  Technically already possible with binary opcodes Assembly and `EXECUTE`, but who wants to do that?  I'd like `LOAD`, `SAVE` and (bytes allowing) `VERIFY` like BASIC has.
+* **Branching:** Planned for 0.4.  Words like `IF` and `DO` and `BEGIN`
 
 Once it can do all these things, it'll be good enough to be considered a useful development tool.  Faster than BASIC, easier than Assembly, and it runs right on the machine.  At least, that's the dream. :D
 
@@ -66,14 +64,13 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Misc:** `:` `;` `ACCEPT` `BYE` `EXECUTE` `NEXT`
 
 
-### Before I call 0.2 done...
-
-* `TYPE` needs some work; the issue has to dow ith ASCII vs. PETSCII I think...
-
-
 ### Words I'd like to add in 0.3:
 
+* **The BIG goal:** TIme to take on file I/O.
 * Comments: `(` `)` and... `\` is a tricky one... Commodore keyboards don't have them... `#` maybe?  `//`?
+* `R>` and `>R`
+* `PAD` - push end of ms - 80 chars or something easy like that on the return stack
+* An escape mechanism:  In durexForth, I can hit RUN/STOP to exit an infinite loop; I'd kinda like to see if there's an interrupt I can listen for, and then if it's triggered set dsp and rsp to zero.
 
 
 
@@ -93,4 +90,5 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 ### Words I don't plan to do anytime soon
 
 * `VARIABLE` and `CONSTANT`; because I can get the similar results with words that just push numbers on the stack (like `: RED 2 ;` and `: TEXT 646 ;` - I can do `RED TEXT C!` or `TEXT C@ .` like I would with a variable/constant).
+* `ALLOT` cuz without `VARIABLE` or `CONSTANT` having that word makes no sense
 * `INCLUDE`, because Commodore's disk API is not like standard Forths; like I said, `LOAD` and `SAVE` will probably work more like in BASIC.

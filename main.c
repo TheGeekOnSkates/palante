@@ -317,13 +317,10 @@ void roll() {
 }
 
 void type() {
-	static char* string;
-	static int16_t j;
+	static int16_t i;
 	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	string = (char*)ds[dsp - 2];
-	for (j=0; j<ds[dsp - 1] * 2; j++) {
-		printf("%c", string[j] + 64);
-	}
+	for (i=0; i<ds[dsp - 1]; i++)
+		printf("%c", PEEK(ds[dsp - 2] + i));
 	dsp -= 2;
 }
 
@@ -385,12 +382,13 @@ void count() {
 	static uint16_t ptr;
 	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
 	ptr = ds[dsp - 1];
-	ds[dsp - 1] = 0;
+	ds[dsp] = 0;
 	while(true) {
 		if (!PEEK(ptr)) break;
-		ds[dsp - 1]++;
+		ds[dsp]++;
 		ptr++;
 	}
+	dsp++;
 }
 
 void sQuote() {
@@ -580,7 +578,7 @@ void main() {
 					status = STATUS_OK;
 					if (redefining) {
 						redefined[0] = ' ';
-						printf("Redefined%s\n", redefined);
+						printf("redefined%s\n", redefined);
 					}
 					redefining = false;
 				}
