@@ -58,9 +58,10 @@
 // -----------------------------------------------------------------------------
 
 int16_t ds[STACK_SIZE], dsp,	// Data stack and its pointer
-	rs[STACK_SIZE], rsp;		// Return stack and its pointer
-uint16_t goWhere;				// Used to make EXECUTE work
-uint8_t status = STATUS_OK;		// System status
+	rs[STACK_SIZE], rsp,		// Return stack and its pointer
+	goWhere;					// Used to make EXECUTE work
+uint8_t status = STATUS_OK,		// System status
+	ms[STACK_SIZE], msp;		// Memory stack (for strings)
 char input[INPUT_SIZE],			// User input buffer
 	redefined[81];				// If redefining a word
 char* ip;						// Interpreter pointer
@@ -391,6 +392,29 @@ void count() {
 		ptr++;
 	}
 }
+
+void sQuote() {
+	static uint8_t i;
+	if (!rsp) { status = STATUS_RS_UNDERFLOW; return; }
+	ds[dsp] = (uint16_t)ms + msp;
+	dsp++;
+	while(rs) {
+		next();
+		i = 0;
+		while(ip[i] != ' ') {
+			if (ip[i] == '"') break;
+			ms[msp] = ip[i];
+			msp++;
+			i++;
+		}
+		if (ip[i] == '"') break;
+		ms[msp] = ' ';
+		msp++;
+	}
+	ds[dsp] = (uint16_t)ms + msp - ds[dsp - 1];
+	dsp++;
+}
+
 
 
 
@@ -728,6 +752,10 @@ void main() {
 			}
 			if (StringStartsWith(ip, "rshift ")) {
 				rshift();
+				continue;
+			}
+			if (StringStartsWith(ip, "s\" ")) {
+				sQuote();
 				continue;
 			}
 			if (StringStartsWith(ip, "swap ")) {

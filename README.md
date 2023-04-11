@@ -62,13 +62,13 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * **Math:** `+` `-` `*` `/` `MOD` `LSHIFT` `RSHIFT` `AND` `OR` `XOR` `INVERT` `NEGATE`
 * **Stack:** `DUP` `SWAP` `OVER` `.` `.S` `EMIT` `DROP` `PICK` `ROLL` `DEPTH`
 * **Comparison:** `=` `<>` `<` `<=` `>` `>=`
-* **Strings:** `."` `COUNT` `TYPE`
+* **Strings:** `."` `S"` `COUNT` `TYPE`
 * **Misc:** `:` `;` `ACCEPT` `BYE` `EXECUTE` `NEXT`
 
 
 ### Before I call 0.2 done...
 
-* `S"` and (also, `TYPE` needs some work)
+* `TYPE` needs some work; the issue has to dow ith ASCII vs. PETSCII I think...
 
 
 ### Words I'd like to add in 0.3:
