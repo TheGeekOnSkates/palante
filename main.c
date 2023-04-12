@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <peekpoke.h>
+#include <cbm.h>
 
 
 
@@ -413,6 +414,28 @@ void sQuote() {
 	dsp++;
 }
 
+void load() {
+	static int8_t result;
+	static char fileName[20];
+	static uint8_t i, diskDrive;
+	if (dsp < 3) { status = STATUS_STACK_UNDERFLOW; return; }
+	dsp--;
+	diskDrive = ds[dsp];
+	dsp--;
+	for (i=0; i<ds[dsp]; i++) {
+		fileName[i] = PEEK(ds[dsp - 1] + i);
+	}
+	dsp--;
+	fileName[i] = '\0';
+	result = cbm_open(2, diskDrive, 2, fileName);
+	
+	// The first 2 bytes are something internal, probably
+	// a file delimiter or the size of the file or something.
+	// We'll just skip those.
+	result = cbm_read(2, dictionary, 2);
+	
+	result = cbm_read(2, dictionary, DICT_SIZE);
+}
 
 
 
@@ -550,7 +573,7 @@ void main() {
 	asm("LDA #1");
 	asm("STA 646");
 	#endif
-	printf("%cpa'lante 0.2\n\n", 147);
+	printf("%cPa'lante 0.3\n\n", 147);
 	while(true) {
 		// Parse user input
 		accept();
@@ -714,6 +737,10 @@ void main() {
 			}
 			if (StringStartsWith(ip, "invert ")) {
 				invert();
+				continue;
+			}
+			if (StringStartsWith(ip, "load ")) {
+				load();
 				continue;
 			}
 			if (StringStartsWith(ip, "lshift ")) {

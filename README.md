@@ -68,7 +68,6 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 
 * **The BIG goal:** TIme to take on file I/O.
 * Comments: `(` `)` and... `\` is a tricky one... Commodore keyboards don't have them... `#` maybe?  `//`?
-* `R>` and `>R`
 * `PAD` - push end of ms - 80 chars or something easy like that on the return stack
 * An escape mechanism:  In durexForth, I can hit RUN/STOP to exit an infinite loop; I'd kinda like to see if there's an interrupt I can listen for, and then if it's triggered set dsp and rsp to zero.
 
@@ -92,3 +91,4 @@ If you know Forth, these do what you think they do. 😆  Note that they are cas
 * `VARIABLE` and `CONSTANT`; because I can get the similar results with words that just push numbers on the stack (like `: RED 2 ;` and `: TEXT 646 ;` - I can do `RED TEXT C!` or `TEXT C@ .` like I would with a variable/constant).
 * `ALLOT` cuz without `VARIABLE` or `CONSTANT` having that word makes no sense
 * `INCLUDE`, because Commodore's disk API is not like standard Forths; like I said, `LOAD` and `SAVE` will probably work more like in BASIC.
+* `R>` and `>R`, because Pa'lante uses the return stack for reading users' code word-by-word (and if I do i.e. `123 >R`, it'll read that input, execute it, but then look at memory address 123 for the next string).  This is kind of like variables/constants; if you want to store data in memory, find a place in memory that won't goof around with the interpreter. :)
