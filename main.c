@@ -39,20 +39,23 @@
 #define XT_DROP                11
 #define XT_DUP                 12
 #define XT_EMIT                13
-#define XT_FETCH               14
-#define XT_GREATER_THAN        15
-#define XT_LESS_THAN           16
-#define XT_LSHIFT              17
-#define XT_OR                  18
-#define XT_OVER                19
-#define XT_PICK                20
-#define XT_PLUS                21
-#define XT_ROLL                22
-#define XT_RSHIFT              23
-#define XT_STORE               24
-#define XT_SWAP                25
-#define XT_TIMES               26
-#define XT_XOR                 27
+#define XT_EQUAL               14
+#define XT_EXECUTE             15
+#define XT_FETCH               16
+#define XT_GREATER_THAN        17
+#define XT_LESS_THAN           18
+#define XT_LSHIFT              19
+#define XT_OR                  20
+#define XT_OVER                21
+#define XT_PICK                22
+#define XT_PLUS                23
+#define XT_ROLL                24
+#define XT_RSHIFT              25
+#define XT_STORE               26
+#define XT_SWAP                27
+#define XT_TIMES               28
+#define XT_UNTIL               29
+#define XT_XOR                 30
 
 
 // Build targets
@@ -177,6 +180,14 @@ void main() {
 				input[ip] = XT_EMIT;
 				ip++;
 			}
+			else if (strcmp(word, "=") == 0) {
+				input[ip] = XT_EQUAL;
+				ip++;
+			}
+			else if (strcmp(word, "execute") == 0) {
+				input[ip] = XT_EXECUTE;
+				ip++;
+			}
 			else if (strcmp(word, "@") == 0) {
 				input[ip] = XT_FETCH;
 				ip++;
@@ -229,6 +240,10 @@ void main() {
 				input[ip] = XT_TIMES;
 				ip++;
 			}
+			else if (strcmp(word, "until") == 0) {
+				input[ip] = XT_UNTIL;
+				ip++;
+			}
 			else if (strcmp(word, "xor") == 0) {
 				input[ip] = XT_XOR;
 				ip++;
@@ -263,8 +278,12 @@ void main() {
 					}
 					break;
 				case XT_AGAIN:
-					ip = rs[rsp] - 1;
-					rsp--;
+					if (!rsp)
+						error = 3;
+					else {
+						ip = rs[rsp] - 1;
+						rsp--;
+					}
 					break;
 				case XT_BEGIN:
 					rs[rsp] = ip;
@@ -314,6 +333,23 @@ void main() {
 					else {
 						dsp--;
 						printf("%c", ds[dsp]);
+					}
+					break;
+				case XT_EQUAL:
+					if (dsp < 2)
+						error = 2;
+					else {
+						ds[dsp - 2] = ds[dsp - 2] == ds[dsp - 1] ? -1 : 0;
+						dsp--;
+					}
+					break;
+				case XT_EXECUTE:
+					if (dsp < 2)
+						error = 2;
+					else {
+						dsp--;
+						temp16 = ds[dsp - 1];
+						asm("JSR _temp16");
 					}
 					break;
 				case XT_GREATER_THAN:
@@ -427,6 +463,19 @@ void main() {
 						ds[dsp - 1] *= ds[dsp];
 					}
 					break;
+				case XT_UNTIL:
+					if (!dsp)
+						error = 2;
+					else if (!rsp)
+						error = 3;
+					else {
+						dsp--;
+						rsp--;
+						if (!ds[dsp]) {
+							ip = rs[rsp] - 1;
+						}
+					}
+					break;
 				case XT_XOR:
 					if (!dsp)
 						error = 2;
@@ -443,6 +492,7 @@ void main() {
 		}
 		switch(error) {
 			case 1: printf("  ok"); break;
+			case 3: printf("return ");	// Notice there's no "break"
 			case 2: printf("stack underflow"); break;
 		}
 		printf("\n");

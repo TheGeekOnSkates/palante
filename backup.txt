@@ -1,36 +1,14 @@
-// Name:			Pa'lante
-// Description:		An 8-bit Forth interpreter
-// Author			The Geek on Skates
-// Website:			http://www.geekonskates.com
-// License:			To be decided
-// =============================================================================
-
-// -----------------------------------------------------------------------------
-// DEPENDENCIES
-// -----------------------------------------------------------------------------
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <peekpoke.h>
-#include <cbm.h>
-
-
-
-// -----------------------------------------------------------------------------
-// MACROS
-// -----------------------------------------------------------------------------
-
-/**
- * Checks is a string starts with a substring
- * @param[in] The string to be tested
- * @param[in] The string we're looking for
- * @returns True if string a starts with string b,
- * or false if not
- */
-#define StringStartsWith(a, b) (strstr(a, b) == a) 
+Forth words that can be done in Forth:
+	: - -1 * + ;
+	: rot 2 roll ;
+	: -rot rot rot ;
+	: 2dup over over ;
+	: 2drop drop drop ;
+	: >= 2dup > -rot = or ;
+	: <= 2dup < -rot = or ;
+	: negate -1 * ;
+	: invert negate 1 - ;
+	: <> = invert ;
 
 // Misc. constants
 
@@ -73,13 +51,6 @@ bool compiling = false,			// Whether or not we're compiling
 // FORTH WORDS
 // -----------------------------------------------------------------------------
 
-void execute() {
-	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	dsp--;
-	goWhere = ds[dsp - 1];
-	asm("JSR _goWhere");
-}
-
 void divide() {
 	// /
 	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
@@ -96,92 +67,12 @@ void mod() {
 	ds[dsp - 1] %= ds[dsp];
 }
 
-
-Forth words that can be done in Forth:
-	: - -1 * + ;
-	: >= 2dup > -rot = or ;
-	: <= 2dup < -rot = or ;
-	: <> = invert ;
-
-
-void and() {
-	// AND
-	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	
-}
-
-void equals() {
-	// =
-	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	ds[dsp - 2] = ds[dsp - 2] == ds[dsp - 1] ? -1 : 0;
-	dsp--;
-}
-
-void notEqual() {
-	// =
-	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	ds[dsp - 2] = ds[dsp - 2] != ds[dsp - 1] ? -1 : 0;
-	dsp--;
-}
-
-void invert() {
-	// INVERT
-	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
-	ds[dsp - 1] *= -1;
-	ds[dsp - 1]--;
-}
-
-void negate() {
-	// NEGATE
-	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
-	ds[dsp - 1] *= -1;
-}
-
 void type() {
 	static int16_t i;
 	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
 	for (i=0; i<ds[dsp - 1]; i++)
 		printf("%c", PEEK(ds[dsp - 2] + i));
 	dsp -= 2;
-}
-
-void accept() {
-	static int8_t i;
-	
-	// Get user input
-	memset(input, 0, INPUT_SIZE);
-	fgets(input, INPUT_SIZE, stdin);
-	
-	// Convert \n or Shift-space to a space for easier parsing
-	for (i=0; i<INPUT_SIZE; i++)
-		if (input[i] == '\n' || input[i] == 160) input[i] = ' ';
-	
-	// Push all the words the user typed onto the return stack
-	for (i=INPUT_SIZE - 1; i>-1; i--) {
-		
-		// Move past any unset chars
-		while (i>0 && input[i] == '\0') i--;
-		
-		// Move past any trailing spaces
-		while (i>=0 && input[i] == ' ') i--;
-		
-		// Move to the space before the start of the word (if there is one)
-		while (i>=0 && input[i] != ' ') i--;
-		
-		// If there is one, move up 1 char to go to the start of the word
-		if (i == -1 || input[i] == ' ') i++;
-		
-		// And push it to the return stack
-		if (i >= 0 && input[i] != ' ') {
-			rs[rsp] = (uint16_t)(input + i);
-			rsp++;
-		}
-	}
-}
-
-void next() {
-	rsp--;
-	ip = (char*)rs[rsp];
 }
 
 void dotQuote() {
@@ -374,11 +265,6 @@ bool InDictionary() {
 
 void main() {
 	static uint16_t length;
-	
-	// For now, I'm gonna put some test data in my dictionary.
-	// Once I have my code finding and running compiled words, then I'll add
-	// the : and ; words so users can add/edit (see my previous attempt for how)
-	strcpy(dictionary, "\nrot 2 roll \n-rot rot rot \n2dup over over \n2drop drop drop \n");
 	
 	while(true) {
 		// Parse user input
