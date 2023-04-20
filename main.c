@@ -34,28 +34,29 @@
 #define XT_CFETCH              6
 #define XT_CSTORE              7
 #define XT_DEPTH               8
-#define XT_DOT                 9
-#define XT_DOT_S               10
-#define XT_DROP                11
-#define XT_DUP                 12
-#define XT_EMIT                13
-#define XT_EQUAL               14
-#define XT_EXECUTE             15
-#define XT_FETCH               16
-#define XT_GREATER_THAN        17
-#define XT_LESS_THAN           18
-#define XT_LSHIFT              19
-#define XT_OR                  20
-#define XT_OVER                21
-#define XT_PICK                22
-#define XT_PLUS                23
-#define XT_ROLL                24
-#define XT_RSHIFT              25
-#define XT_STORE               26
-#define XT_SWAP                27
-#define XT_TIMES               28
-#define XT_UNTIL               29
-#define XT_XOR                 30
+#define XT_DIVIDE              9
+#define XT_DOT                 10
+#define XT_DOT_S               11
+#define XT_DROP                12
+#define XT_DUP                 13
+#define XT_EMIT                14
+#define XT_EQUAL               15
+#define XT_EXECUTE             16
+#define XT_FETCH               17
+#define XT_GREATER_THAN        18
+#define XT_LESS_THAN           19
+#define XT_LSHIFT              20
+#define XT_OR                  21
+#define XT_OVER                22
+#define XT_PICK                23
+#define XT_PLUS                24
+#define XT_ROLL                25
+#define XT_RSHIFT              26
+#define XT_STORE               27
+#define XT_SWAP                28
+#define XT_TIMES               29
+#define XT_UNTIL               30
+#define XT_XOR                 31
 
 
 // Build targets
@@ -78,11 +79,15 @@ typedef uint16_t xt;
 // GLOBAL VARIABLES
 // -----------------------------------------------------------------------------
 
-const char* DELIMITERS = " \xA0\n";
-char buffer[80];
-xt input[40], ip = 0, ds[128], dsp = 0, rs[128], rsp = 0;
-uint8_t temp8 = 0;
-int16_t temp16 = 0;
+const char* DELIMITERS = " \xA0\n";		// Space, Shift-Space (160) and \n
+char buffer[80];						// For storing users' code
+xt input[40],							// input (above), compiled to XTs
+	ip = 0,								// Interpreter pointer
+	ds[128], dsp = 0,					// Data stack ("the stack") and pointer
+	rs[128], rsp = 0,					// Return stack and its pointer
+	dictionary[4096], dp = 0;			// Dictionary and its pointer
+uint8_t temp8 = 0;						// For one-off jobs requiring 8-bit and
+int16_t temp16 = 0;						// 16-bit numbers (obviously) :)
 
 
 // -----------------------------------------------------------------------------
@@ -132,6 +137,16 @@ void main() {
 		memset(input, 0, 40);
 		ip = 0;
 		while(word != NULL) {
+			if (strcmp(word, "#") == 0) break;
+			if (strcmp(word, "(") == 0) {
+				word = strtok(NULL, DELIMITERS);
+				while(word != NULL) {
+					if (word[strlen(word)-1] == ')') break;
+					word = strtok(NULL, DELIMITERS);
+				}
+				word = strtok(NULL, DELIMITERS);
+				if (word == NULL) break;
+			}
 			if (strcmp(word, "and") == 0) {
 				input[ip] = XT_AND;
 				ip++;
@@ -158,6 +173,10 @@ void main() {
 			}
 			else if (strcmp(word, "depth") == 0) {
 				input[ip] = XT_DEPTH;
+				ip++;
+			}
+			else if (strcmp(word, "/") == 0) {
+				input[ip] = XT_DIVIDE;
 				ip++;
 			}
 			else if (strcmp(word, ".") == 0) {
@@ -301,6 +320,15 @@ void main() {
 				case XT_DEPTH:
 					ds[dsp] = dsp;
 					dsp++;
+					break;
+				case XT_DIVIDE:
+					if (dsp < 2)
+						error = 2;
+					else {
+						dsp--;
+						if (!ds[dsp]) error = 4;
+						else ds[dsp - 1] /= ds[dsp];
+					}
 					break;
 				case XT_DOT:
 					if (!dsp)
