@@ -11,53 +11,13 @@ Forth words that can be done in Forth:
 	: invert negate 1 - ;
 	: <> = invert ;
 
-
 // -----------------------------------------------------------------------------
-// FORTH WORDS
+// TO BE RE-ADDED
 // -----------------------------------------------------------------------------
 
-void dotQuote() {
-	static uint8_t i;
-	if (!rsp) { status = STATUS_RS_UNDERFLOW; return; }
-	while(rs) {
-		next();
-		i = 0;
-		while(ip[i] != ' ') {
-			if (ip[i] == '"') return;
-			putchar(ip[i]);
-			i++;
-		}
-		putchar(' ');
-	}
-}
-
-void sQuote() {
-	static uint8_t i;
-	if (!rsp) { status = STATUS_RS_UNDERFLOW; return; }
-	ds[dsp] = (uint16_t)ms + msp;
-	dsp++;
-	while(rs) {
-		next();
-		i = 0;
-		while(ip[i] != ' ') {
-			if (ip[i] == '"') break;
-			ms[msp] = ip[i];
-			msp++;
-			i++;
-		}
-		if (ip[i] == '"') break;
-		ms[msp] = ' ';
-		msp++;
-	}
-	ds[dsp] = (uint16_t)ms + msp - ds[dsp - 1];
-	dsp++;
-}
-
-void load() {
-	// Functions I _THINK_ I'll need for loading files (later)
-	cbm_open(2, diskDrive, 2, fileName);
-	cbm_read(2, dictionary, DICT_SIZE);
-}
+// Functions I _THINK_ I'll need for loading files (later)
+cbm_open(2, diskDrive, 2, fileName);
+cbm_read(2, dictionary, DICT_SIZE);
 
 
 
@@ -65,17 +25,13 @@ void load() {
 // COMPILER STUFF
 // -----------------------------------------------------------------------------
 
-/**
- * At the beginning of the compile process, this deletes any previous definition
- * of the word (kind of like FORGET in some Forths.  Hmmmm...) :D
- */
 void clearCompiledWord() {
 	static char* start;
 	static uint16_t i = 0;
 	
 	// Build the start of the definition ("\n" + the name of the word)
-	memset(redefined, 0, 81);
-	redefined[0] = '\n';
+	memset(currentWord, 0, 81);
+	currentWord[0] = '\n';
 	i = 0; while (ip[i] == ' ') i++;
 	while(ip[i] == ' ') i++;
 	for (; i<81; i++) {
@@ -111,11 +67,6 @@ void clearCompiledWord() {
 	}
 }
 
-/**
- * Checks if the current word is in the dictionary, and puts its definition on
- * the return stack if it is
- * @returns True if the word is in the dictionary, false if it isn't
- */
 bool InDictionary() {
 	// Build a string: \n + current word + space
 	static char wordName[82], * temp;
@@ -170,9 +121,7 @@ void main() {
 			
 			// If we're compiling, keep compiling unless it's a semicolon
 			if (compiling) {
-				if (isName) clearCompiledWord();
-				isName = false;
-				if (StringStartsWith(ip, "; ")) {
+				If it's a semicolon...
 					strcat(dictionary, "\n");
 					compiling = false;
 					status = STATUS_OK;
@@ -193,21 +142,3 @@ void main() {
 				}
 				continue;
 			}
-			
-			// This is not a standard Forth word, but a tutorial I followed once
-			// (the one I learned this compiler strategy from) had it and I like
-			// it, so it works for now (lol).  Maybe I'll replace it with "SEE"
-			// later... or maybe I'll just leave it :)
-			if (StringStartsWith(ip, "compiler ")) {
-				printf("\n%s", dictionary);
-				continue;
-			}
-
-			// If it's not a number, is it in the dictionary?
-			if (InDictionary()) continue;
-			
-			// If it's not in the dictionary, it' an error
-			status = STATUS_UNKNOWN_WORD;
-		}
-	}
-}

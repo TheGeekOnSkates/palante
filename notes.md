@@ -3,9 +3,13 @@
 Before calling 0.3 done:
 
 * Get the compiler working again
-* Re-add ." and S"
 * Define Forth words in Forth where it makes sense - maybe in a disk image
 * Finish updating the README
+
+Known issues:
+
+* If I do i.e. `s" some string" type` it only types half the string.  This is because `S"` is storing the chars in 16-bits, not 8.
+* Also related to strings: if (on the PET) I do `32768 c@ emit` (with "Pa'lante 0.3" at the top left) I get a lowercase P, not a capital P.  This is because of ASCII vs. PETSCII confusion in printf("%c")... better way?
 
 
 

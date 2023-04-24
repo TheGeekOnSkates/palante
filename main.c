@@ -38,29 +38,31 @@
 #define XT_DEPTH               10
 #define XT_DIVIDE              11
 #define XT_DOT                 12
-#define XT_DOT_S               13
-#define XT_DROP                14
-#define XT_DUP                 15
-#define XT_EMIT                16
-#define XT_EQUAL               17
-#define XT_EXECUTE             18
-#define XT_FETCH               19
-#define XT_GREATER_THAN        20
-#define XT_LESS_THAN           21
-#define XT_LSHIFT              22
-#define XT_OR                  23
-#define XT_OVER                24
-#define XT_PICK                25
-#define XT_PLUS                26
-#define XT_ROLL                27
-#define XT_RSHIFT              28
-#define XT_SEMICOLON           29
-#define XT_STORE               30
-#define XT_SWAP                31
-#define XT_TIMES               32
-#define XT_TYPE                33
-#define XT_UNTIL               34
-#define XT_XOR                 35
+#define XT_DOT_QUOTE           13
+#define XT_DOT_S               14
+#define XT_DROP                15
+#define XT_DUP                 16
+#define XT_EMIT                17
+#define XT_EQUAL               18
+#define XT_EXECUTE             19
+#define XT_FETCH               20
+#define XT_GREATER_THAN        21
+#define XT_LESS_THAN           22
+#define XT_LSHIFT              23
+#define XT_OR                  24
+#define XT_OVER                25
+#define XT_PICK                26
+#define XT_PLUS                27
+#define XT_ROLL                28
+#define XT_RSHIFT              29
+#define XT_S_QUOTE             30
+#define XT_SEMICOLON           31
+#define XT_STORE               32
+#define XT_SWAP                33
+#define XT_TIMES               34
+#define XT_TYPE                35
+#define XT_UNTIL               36
+#define XT_XOR                 37
 
 
 // Misc. constants
@@ -108,6 +110,7 @@ uint8_t temp8 = 0;						// For one-off jobs requiring 8-bit and
 int16_t temp16 = 0;						// 16-bit numbers (obviously) :)
 bool compiling = false,					// Whether or not we're compiling
 	redefining = false,					// Whether or not we're redefining a word
+	inQuotes = false,					// For ." and S"
 	isName = false;						// Set to true if the next word is the name of a
 										// word in a : definition
 
@@ -117,6 +120,11 @@ bool compiling = false,					// Whether or not we're compiling
 // TO BE SORTED
 // -----------------------------------------------------------------------------
 
+/**
+ * Checks if a word is a number
+ * @param[in] The string to be tested
+ * @returns True if it is, false if it isn't
+ */
 bool IsNumber(char* word) {
 	static size_t i, length;
 	i = 0;
@@ -132,6 +140,25 @@ bool IsNumber(char* word) {
 	return true;
 }
 
+/**
+ * At the beginning of the compile process, this deletes any previous definition
+ * of the word (kind of like FORGET in some Forths.  Hmmmm...) :D
+ */
+void clearCompiledWord() {
+}
+
+/**
+ * Checks if the current word is in the dictionary, and puts its definition on
+ * the return stack if it is
+ * @returns True if the word is in the dictionary, false if it isn't
+ */
+bool InDictionary() {
+	return false;	// for now
+}
+
+/**
+ * Main entry point - the program starts here
+ */
 void main() {
 	static char* word;
 	static uint8_t error, i;
@@ -218,6 +245,11 @@ void main() {
 				input[ip] = XT_DOT_S;
 				ip++;
 			}
+			else if (strcmp(word, ".\"") == 0) {
+				input[ip] = XT_DOT_QUOTE;
+				inQuotes = true;
+				ip++;
+			}
 			else if (strcmp(word, "drop") == 0) {
 				input[ip] = XT_DROP;
 				ip++;
@@ -282,8 +314,9 @@ void main() {
 				input[ip] = XT_TYPE;
 				ip++;
 			}
-			else if (strcmp(word, ";") == 0) {
-				input[ip] = XT_SEMICOLON;
+			else if (strcmp(word, "s\"") == 0) {
+				input[ip] = XT_S_QUOTE;
+				inQuotes = true;
 				ip++;
 			}
 			else if (strcmp(word, "!") == 0) {
@@ -313,8 +346,31 @@ void main() {
 				ip++;
 			}
 			else {
-				printf("Unknown word \"%s\"\n", word);
-				input[0] = 65535L;
+				if (inQuotes) {
+					while(true) {
+						temp16 = 0;
+						while(word != NULL) {
+							input[ip] = word[temp16];
+							ip++;
+							if (strlen(word) - 1 == temp16) {
+								if (word[temp16] == '"')
+									inQuotes = false;
+								else {
+									input[ip] = 32;
+									ip++;
+								}
+								break;
+							}
+							temp16++;
+						}
+						if (!inQuotes) break;
+						word = strtok(NULL, DELIMITERS);
+					}
+				}
+				else {
+					printf("Unknown word \"%s\"\n", word);
+					input[0] = 65535L;
+				}
 				break;
 			}
 			word = strtok(NULL, DELIMITERS);
@@ -327,6 +383,8 @@ void main() {
 		ip = 0; error = 0;
 		while(!error) {
 			if (compiling) {
+				if (isName) clearCompiledWord();
+				isName = false;
 				if (input[ip] == XT_SEMICOLON) {
 					compiling = false;
 				}
@@ -396,6 +454,13 @@ void main() {
 					else {
 						dsp--;
 						printf("%d ", ds[dsp]);
+					}
+					break;
+				case XT_DOT_QUOTE:
+					ip++;
+					while(input[ip] != '"') {
+						printf("%c", input[ip]);
+						ip++;
 					}
 					break;
 				case XT_DOT_S:
@@ -526,6 +591,20 @@ void main() {
 						dsp--;
 					}
 					break;
+				case XT_S_QUOTE:
+					ds[dsp] = (uint16_t)ms + msp;
+					dsp++;
+					temp8 = 0;
+					ip++;
+					while(input[ip] != '"') {
+						ms[msp] = input[ip];
+						msp++;
+						ip++;
+						temp8++;
+					}
+					ds[dsp] = temp8;
+					dsp++;
+					break;
 				case XT_STORE:
 					if (dsp < 2)
 						error = STATUS_STACK_UNDERFLOW;
@@ -581,6 +660,11 @@ void main() {
 					}
 					break;
 				default:
+					// If it's not a number, is it in the dictionary?
+					if (InDictionary()) continue;
+					
+					// If it's not in the dictionary, it' an error
+					// TO-DO: Handle unknown words
 					error = STATUS_OK;
 					break;
 			}
