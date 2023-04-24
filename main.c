@@ -63,12 +63,24 @@
 #define XT_XOR                 35
 
 
+// Misc. constants
+
+#define INPUT_SIZE 80
+#define STACK_SIZE 256
+#define DICT_SIZE 4096
+
+
+// Status codes
+
+#define STATUS_OK				1		// No error, "ok"
+#define STATUS_STACK_UNDERFLOW	2		// Stack underflow error
+#define STATUS_RS_UNDERFLOW		3		// Return stack underflow error
+
+
 // Build targets
 
-#define VIC20 false
-#define C64 true
-
-
+#define VIC20    false
+#define C64      true
 
 
 
@@ -84,18 +96,20 @@ typedef uint16_t xt;
 // -----------------------------------------------------------------------------
 
 const char* DELIMITERS = " \xA0\n";		// Space, Shift-Space (160) and \n
-char buffer[80];						// For storing users' code
-xt input[40],							// input (above), compiled to XTs
+char buffer[INPUT_SIZE],				// For storing users' code
+	currentWord[INPUT_SIZE];			// For (re)defining a word
+xt input[INPUT_SIZE/2],					// input (above), compiled to XTs
 	ip = 0,								// Interpreter pointer
-	ds[128], dsp = 0,					// Data stack ("the stack") and pointer
-	rs[128], rsp = 0,					// Return stack and its pointer
-	dictionary[4096], dp = 0;			// Dictionary and its pointer
+	ds[STACK_SIZE], dsp = 0,			// Data stack ("the stack") and pointer
+	rs[STACK_SIZE], rsp = 0,			// Return stack and its pointer
+	ms[STACK_SIZE], msp = 0,			// Memory stack (for strings)
+	dictionary[DICT_SIZE], dp = 0;		// Dictionary and its pointer
 uint8_t temp8 = 0;						// For one-off jobs requiring 8-bit and
 int16_t temp16 = 0;						// 16-bit numbers (obviously) :)
-bool compiling = false,			// Whether or not we're compiling
-	redefining = false,			// Whether or not we're redefining a word
-	isName = false;				// Set to true if the next word is the name of a
-								// word in a : definition
+bool compiling = false,					// Whether or not we're compiling
+	redefining = false,					// Whether or not we're redefining a word
+	isName = false;						// Set to true if the next word is the name of a
+										// word in a : definition
 
 
 
@@ -178,6 +192,10 @@ void main() {
 			}
 			else if (strcmp(word, "count") == 0) {
 				input[ip] = XT_COUNT;
+				ip++;
+			}
+			else if (strcmp(word, ":") == 0) {
+				input[ip] = XT_COLON;
 				ip++;
 			}
 			else if (strcmp(word, "c!") == 0) {
@@ -264,6 +282,10 @@ void main() {
 				input[ip] = XT_TYPE;
 				ip++;
 			}
+			else if (strcmp(word, ";") == 0) {
+				input[ip] = XT_SEMICOLON;
+				ip++;
+			}
 			else if (strcmp(word, "!") == 0) {
 				input[ip] = XT_STORE;
 				ip++;
@@ -304,10 +326,15 @@ void main() {
 		// Now run the code
 		ip = 0; error = 0;
 		while(!error) {
+			if (compiling) {
+				if (input[ip] == XT_SEMICOLON) {
+					compiling = false;
+				}
+			}
 			switch(input[ip]) {
 				case XT_AND:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] & ds[dsp - 1];
 						dsp--;
@@ -315,7 +342,7 @@ void main() {
 					break;
 				case XT_AGAIN:
 					if (!rsp)
-						error = 3;
+						error = STATUS_RS_UNDERFLOW;
 					else {
 						ip = rs[rsp] - 1;
 						rsp--;
@@ -330,8 +357,11 @@ void main() {
 				case XT_CFETCH:
 					ds[dsp - 1] = PEEK(ds[dsp - 1]);
 					break;
+				case XT_COLON:
+					compiling = isName = true;
+					break;
 				case XT_COUNT:
-					if (!dsp) error = 2;
+					if (!dsp) error = STATUS_STACK_UNDERFLOW;
 					else {
 						temp16 = ds[dsp - 1];
 						ds[dsp] = 0;
@@ -353,7 +383,7 @@ void main() {
 					break;
 				case XT_DIVIDE:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
 						if (!ds[dsp]) error = 4;
@@ -362,7 +392,7 @@ void main() {
 					break;
 				case XT_DOT:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
 						printf("%d ", ds[dsp]);
@@ -374,12 +404,12 @@ void main() {
 					break;
 				case XT_DROP:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else dsp--;
 					break;
 				case XT_DUP:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp] = ds[dsp - 1];
 						dsp++;
@@ -387,7 +417,7 @@ void main() {
 					break;
 				case XT_EMIT:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
 						printf("%c", ds[dsp]);
@@ -395,24 +425,24 @@ void main() {
 					break;
 				case XT_EQUAL:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] == ds[dsp - 1] ? -1 : 0;
 						dsp--;
 					}
 					break;
 				case XT_EXECUTE:
-					if (dsp < 2)
-						error = 2;
+					if (!dsp)
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
-						temp16 = ds[dsp - 1];
+						temp16 = ds[dsp];
 						asm("JSR _temp16");
 					}
 					break;
 				case XT_GREATER_THAN:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] > ds[dsp - 1] ? -1 : 0;
 						dsp--;
@@ -420,7 +450,7 @@ void main() {
 					break;
 				case XT_LESS_THAN:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] < ds[dsp - 1] ? -1 : 0;
 						dsp--;
@@ -428,7 +458,7 @@ void main() {
 					break;
 				case XT_LSHIFT:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] << ds[dsp - 1];
 						dsp--;
@@ -442,11 +472,11 @@ void main() {
 				case XT_FETCH:
 					if (dsp)
 						ds[dsp - 1] = PEEKW(ds[dsp - 1]);
-					else error = 2;
+					else error = STATUS_STACK_UNDERFLOW;
 					break;
 				case XT_OR:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] | ds[dsp - 1];
 						dsp--;
@@ -454,7 +484,7 @@ void main() {
 					break;
 				case XT_OVER:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp] = ds[dsp - 2];
 						dsp++;
@@ -462,7 +492,7 @@ void main() {
 					break;
 				case XT_PICK:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						temp8 = ds[dsp - 1];
 						ds[dsp - 1] = ds[dsp - temp8 - 2];
@@ -470,7 +500,7 @@ void main() {
 					break;
 				case XT_PLUS:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
 						ds[dsp - 1] += ds[dsp];
@@ -478,7 +508,7 @@ void main() {
 					break;
 				case XT_ROLL:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						temp8 = ds[dsp - 1];
 						ds[dsp - 1] = ds[dsp - temp8 - 2];
@@ -490,7 +520,7 @@ void main() {
 					break;
 				case XT_RSHIFT:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] >> ds[dsp - 1];
 						dsp--;
@@ -498,7 +528,7 @@ void main() {
 					break;
 				case XT_STORE:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						POKEW(ds[dsp - 1], ds[dsp - 2]);
 						dsp -= 2;
@@ -506,7 +536,7 @@ void main() {
 					break;
 				case XT_SWAP:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						temp8 = ds[dsp - 2];
 						ds[dsp - 2] = ds[dsp - 1];
@@ -515,14 +545,14 @@ void main() {
 					break;
 				case XT_TIMES:
 					if (dsp < 2)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						dsp--;
 						ds[dsp - 1] *= ds[dsp];
 					}
 					break;
 				case XT_TYPE:
-					if (dsp < 2) error = 2;
+					if (dsp < 2) error = STATUS_STACK_UNDERFLOW;
 					else {
 						for (i=0; i<ds[dsp - 1]; i++)
 							printf("%c", PEEK(ds[dsp - 2] + i));
@@ -531,9 +561,9 @@ void main() {
 					break;
 				case XT_UNTIL:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else if (!rsp)
-						error = 3;
+						error = STATUS_RS_UNDERFLOW;
 					else {
 						dsp--;
 						rsp--;
@@ -544,23 +574,27 @@ void main() {
 					break;
 				case XT_XOR:
 					if (!dsp)
-						error = 2;
+						error = STATUS_STACK_UNDERFLOW;
 					else {
 						ds[dsp - 2] = ds[dsp - 2] ^ ds[dsp - 1];
 						dsp--;
 					}
 					break;
 				default:
-					error = 1;
+					error = STATUS_OK;
 					break;
 			}
 			ip++;
 		}
 		switch(error) {
-			case 1: printf("  ok"); break;
-			case 3: printf("return ");	// Notice there's no "break"
-			case 2: printf("stack underflow"); break;
+			case STATUS_OK:              printf("  ok"); break;
+			case STATUS_RS_UNDERFLOW:    printf("return ");	// Notice there's no "break"
+			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
 		}
 		printf("\n");
+		if (error > 1) {
+			dsp = 0;
+			rsp = 0;
+		}
 	}
 }

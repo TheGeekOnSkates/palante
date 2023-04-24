@@ -12,37 +12,6 @@ Forth words that can be done in Forth:
 	: <> = invert ;
 
 
-
-
-// Misc. constants
-
-#define INPUT_SIZE 80
-#define STACK_SIZE 256
-#define DICT_SIZE 4096
-
-
-// Status codes
-
-#define STATUS_OK				0		// No error, "ok"
-#define STATUS_COMPILED			1		// All words compiled successfully
-#define STATUS_STACK_UNDERFLOW	2		// Stack underflow error
-#define STATUS_DIV_BY_ZERO		3		// Division by 0 error
-#define STATUS_UNKNOWN_WORD		4		// Unknown word error
-#define STATUS_RS_UNDERFLOW		5		// Return stack underflow error
-
-
-// -----------------------------------------------------------------------------
-// GLOBAL VARIABLES
-// -----------------------------------------------------------------------------
-
-uint8_t status = STATUS_OK,		// System status
-	ms[STACK_SIZE], msp;		// Memory stack (for strings)
-char input[INPUT_SIZE],			// User input buffer
-	redefined[81];				// If redefining a word
-
-
-
-
 // -----------------------------------------------------------------------------
 // FORTH WORDS
 // -----------------------------------------------------------------------------
@@ -85,32 +54,15 @@ void sQuote() {
 }
 
 void load() {
-	static int8_t result;
-	static char fileName[20];
-	static uint8_t i, diskDrive;
-	if (dsp < 3) { status = STATUS_STACK_UNDERFLOW; return; }
-	dsp--;
-	diskDrive = ds[dsp];
-	dsp--;
-	for (i=0; i<ds[dsp]; i++) {
-		fileName[i] = PEEK(ds[dsp - 1] + i);
-	}
-	dsp--;
-	fileName[i] = '\0';
-	result = cbm_open(2, diskDrive, 2, fileName);
-	
-	// The first 2 bytes are something internal, probably
-	// a file delimiter or the size of the file or something.
-	// We'll just skip those.
-	result = cbm_read(2, dictionary, 2);
-	
-	result = cbm_read(2, dictionary, DICT_SIZE);
+	// Functions I _THINK_ I'll need for loading files (later)
+	cbm_open(2, diskDrive, 2, fileName);
+	cbm_read(2, dictionary, DICT_SIZE);
 }
 
 
 
 // -----------------------------------------------------------------------------
-// TO BE SORTED
+// COMPILER STUFF
 // -----------------------------------------------------------------------------
 
 /**
@@ -199,29 +151,22 @@ bool InDictionary() {
 		rsp++;
 		temp--;
 	}
-	
 	return true;
 }
+
+
+
+
+// -----------------------------------------------------------------------------
+// MAIN
+// -----------------------------------------------------------------------------
 
 void main() {
 	static uint16_t length;
 	
 	while(true) {
-		// Parse user input
-		accept();
-		
 		// Run it, one word at a time
-		if (!compiling) status = STATUS_OK;
 		while(rsp > 0) {
-			// If the status is not OK or COMPILED, exit the loop
-			if (status > STATUS_COMPILED) {
-				dsp = 0;
-				rsp = 0;
-				break;
-			}
-			
-			// Pop the return stack to the input pointer
-			next();
 			
 			// If we're compiling, keep compiling unless it's a semicolon
 			if (compiling) {
@@ -258,24 +203,11 @@ void main() {
 				continue;
 			}
 
-			// Handle Forth words
-			if (StringStartsWith(ip, ": ")) {
-				compiling = isName = true;
-				continue;
-			}
-
 			// If it's not a number, is it in the dictionary?
 			if (InDictionary()) continue;
 			
 			// If it's not in the dictionary, it' an error
 			status = STATUS_UNKNOWN_WORD;
-			
-			// If at any point there's an error, stop running
-			if (status > STATUS_COMPILED) {
-				dsp = 0;
-				rsp = 0;
-				break;
-			}
 		}
 	}
 }
