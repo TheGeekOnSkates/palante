@@ -62,19 +62,6 @@ void dotQuote() {
 	}
 }
 
-void count() {
-	static uint16_t ptr;
-	if (!dsp) { status = STATUS_STACK_UNDERFLOW; return; }
-	ptr = ds[dsp - 1];
-	ds[dsp] = 0;
-	while(true) {
-		if (!PEEK(ptr)) break;
-		ds[dsp]++;
-		ptr++;
-	}
-	dsp++;
-}
-
 void sQuote() {
 	static uint8_t i;
 	if (!rsp) { status = STATUS_RS_UNDERFLOW; return; }
@@ -170,25 +157,6 @@ void clearCompiledWord() {
 		start[i] = start[i + 1];
 		i++;
 	}
-}
-
-/**
- * Checks if a string contains a signed whole number
- * (with or withou leading sign)
- * @param The string to be tested
- * @returns True if it is, false if it isn't
- */
-bool IsNumber(char* word) {
-	static uint8_t i, length;
-	if (strcmp(word, "-") == 0 || strcmp(word, "+") == 0)
-		return false;
-	length = strlen(word);
-	i = 0;
-	if (word[0] == '-' || word[0] == '+') i++;
-	for (; i<length; i++)
-		if (word[i] < '0' || word[i] > '9')
-			return word[i] == ' ';
-	return true;
 }
 
 /**
@@ -293,180 +261,9 @@ void main() {
 			// Handle Forth words
 			if (StringStartsWith(ip, ": ")) {
 				compiling = isName = true;
-				status = STATUS_COMPILED;
 				continue;
 			}
-			if (StringStartsWith(ip, "= ")) {
-				equals();
-				continue;
-			}
-			if (StringStartsWith(ip, "<> ")) {
-				notEqual();
-				continue;
-			}
-			if (StringStartsWith(ip, "<= ")) {
-				lte();
-				continue;
-			}
-			if (StringStartsWith(ip, "< ")) {
-				lt();
-				continue;
-			}
-			if (StringStartsWith(ip, ">= ")) {
-				gte();
-				continue;
-			}
-			if (StringStartsWith(ip, "> ")) {
-				gt();
-				continue;
-			}
-			if (StringStartsWith(ip, "! ")) {
-				store();
-				continue;
-			}
-			if (StringStartsWith(ip, "@ ")) {
-				fetch();
-				continue;
-			}
-			if (StringStartsWith(ip, ". ")) {
-				pop();
-				continue;
-			}
-			if (StringStartsWith(ip, ".s ")) {
-				printStack();
-				continue;
-			}
-			if (StringStartsWith(ip, ".\" ")) {
-				dotQuote();
-				continue;
-			}
-			if (StringStartsWith(ip, "+ ")) {
-				add();
-				continue;
-			}
-			if (StringStartsWith(ip, "- ")) {
-				subtract();
-				continue;
-			}
-			if (StringStartsWith(ip, "* ")) {
-				multiply();
-				continue;
-			}
-			if (StringStartsWith(ip, "/ ")) {
-				divide();
-				continue;
-			}
-			if (StringStartsWith(ip, "accept ")) {
-				accept();
-				continue;
-			}
-			if (StringStartsWith(ip, "and ")) {
-				and();
-				continue;
-			}
-			if (StringStartsWith(ip, "bye ")) {
-				bye();
-			}
-			if (StringStartsWith(ip, "c! ")) {
-				cstore();
-				continue;
-			}
-			if (StringStartsWith(ip, "c@ ")) {
-				cfetch();
-				continue;
-			}
-			if (StringStartsWith(ip, "count ")) {
-				count();
-				continue;
-			}
-			if (StringStartsWith(ip, "depth ")) {
-				depth();
-				continue;
-			}
-			if (StringStartsWith(ip, "dup ")) {
-				dup();
-				continue;
-			}
-			if (StringStartsWith(ip, "drop ")) {
-				drop();
-				continue;
-			}
-			if (StringStartsWith(ip, "emit ")) {
-				emit();
-				continue;
-			}
-			if (StringStartsWith(ip, "execute ")) {
-				execute();
-				continue;
-			}
-			if (StringStartsWith(ip, "invert ")) {
-				invert();
-				continue;
-			}
-			if (StringStartsWith(ip, "load ")) {
-				load();
-				continue;
-			}
-			if (StringStartsWith(ip, "lshift ")) {
-				lshift();
-				continue;
-			}
-			if (StringStartsWith(ip, "mod ")) {
-				mod();
-				continue;
-			}
-			if (StringStartsWith(ip, "negate ")) {
-				negate();
-				continue;
-			}
-			if (StringStartsWith(ip, "next ")) {
-				mod();
-				continue;
-			}
-			if (StringStartsWith(ip, "or ")) {
-				or();
-				continue;
-			}
-			if (StringStartsWith(ip, "over ")) {
-				over();
-				continue;
-			}
-			if (StringStartsWith(ip, "pick ")) {
-				pick();
-				continue;
-			}
-			if (StringStartsWith(ip, "roll ")) {
-				roll();
-				continue;
-			}
-			if (StringStartsWith(ip, "rshift ")) {
-				rshift();
-				continue;
-			}
-			if (StringStartsWith(ip, "s\" ")) {
-				sQuote();
-				continue;
-			}
-			if (StringStartsWith(ip, "swap ")) {
-				swap();
-				continue;
-			}
-			if (StringStartsWith(ip, "type ")) {
-				type();
-				continue;
-			}
-			if (StringStartsWith(ip, "xor ")) {
-				xor();
-				continue;
-			}
-			
-			// If it's not a Forth word, is it a number?  If so, push it onto the stack.
-			if (IsNumber(ip)) {
-				ds[dsp] = atoi(ip);
-				dsp++;
-				continue;
-			}
-			
+
 			// If it's not a number, is it in the dictionary?
 			if (InDictionary()) continue;
 			
@@ -480,19 +277,5 @@ void main() {
 				break;
 			}
 		}
-		
-		// And print the system status
-		switch(status) {
-			case STATUS_COMPILED: printf("  compiled"); break;
-			case STATUS_STACK_UNDERFLOW: printf("stack underflow"); break;
-			case STATUS_DIV_BY_ZERO: printf("division by zero"); break;
-			case STATUS_RS_UNDERFLOW: printf("return stack underflow"); break;
-			case STATUS_UNKNOWN_WORD:
-				strchr(ip, ' ')[0] = '\0';
-				printf("unknown word \"%s\"", ip);
-				break;
-			default: printf("  ok");
-		}
-		printf("\n");
 	}
 }

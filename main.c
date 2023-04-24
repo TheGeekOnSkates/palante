@@ -32,34 +32,35 @@
 #define XT_BEGIN               4
 #define XT_BYE                 5
 #define XT_CFETCH              6
-#define XT_CCOLON              7
-#define XT_CSTORE              8
-#define XT_DEPTH               9
-#define XT_DIVIDE              10
-#define XT_DOT                 11
-#define XT_DOT_S               12
-#define XT_DROP                13
-#define XT_DUP                 14
-#define XT_EMIT                15
-#define XT_EQUAL               16
-#define XT_EXECUTE             17
-#define XT_FETCH               18
-#define XT_GREATER_THAN        19
-#define XT_LESS_THAN           20
-#define XT_LSHIFT              21
-#define XT_OR                  22
-#define XT_OVER                23
-#define XT_PICK                24
-#define XT_PLUS                25
-#define XT_ROLL                26
-#define XT_RSHIFT              27
-#define XT_SEMICOLON           28
-#define XT_STORE               29
-#define XT_SWAP                30
-#define XT_TIMES               31
-#define XT_TYPE                32
-#define XT_UNTIL               33
-#define XT_XOR                 34
+#define XT_COLON               7
+#define XT_COUNT               8
+#define XT_CSTORE              9
+#define XT_DEPTH               10
+#define XT_DIVIDE              11
+#define XT_DOT                 12
+#define XT_DOT_S               13
+#define XT_DROP                14
+#define XT_DUP                 15
+#define XT_EMIT                16
+#define XT_EQUAL               17
+#define XT_EXECUTE             18
+#define XT_FETCH               19
+#define XT_GREATER_THAN        20
+#define XT_LESS_THAN           21
+#define XT_LSHIFT              22
+#define XT_OR                  23
+#define XT_OVER                24
+#define XT_PICK                25
+#define XT_PLUS                26
+#define XT_ROLL                27
+#define XT_RSHIFT              28
+#define XT_SEMICOLON           29
+#define XT_STORE               30
+#define XT_SWAP                31
+#define XT_TIMES               32
+#define XT_TYPE                33
+#define XT_UNTIL               34
+#define XT_XOR                 35
 
 
 // Build targets
@@ -173,6 +174,10 @@ void main() {
 			}
 			else if (strcmp(word, "c@") == 0) {
 				input[ip] = XT_CFETCH;
+				ip++;
+			}
+			else if (strcmp(word, "count") == 0) {
+				input[ip] = XT_COUNT;
 				ip++;
 			}
 			else if (strcmp(word, "c!") == 0) {
@@ -324,6 +329,19 @@ void main() {
 					return;
 				case XT_CFETCH:
 					ds[dsp - 1] = PEEK(ds[dsp - 1]);
+					break;
+				case XT_COUNT:
+					if (!dsp) error = 2;
+					else {
+						temp16 = ds[dsp - 1];
+						ds[dsp] = 0;
+						while(true) {
+							if (!PEEK(temp16)) break;
+							ds[dsp]++;
+							temp16++;
+						}
+						dsp++;
+					}
 					break;
 				case XT_CSTORE:
 					POKE(ds[dsp - 1], ds[dsp - 2]);
