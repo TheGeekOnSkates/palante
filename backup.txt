@@ -39,24 +39,13 @@ uint8_t status = STATUS_OK,		// System status
 	ms[STACK_SIZE], msp;		// Memory stack (for strings)
 char input[INPUT_SIZE],			// User input buffer
 	redefined[81];				// If redefining a word
-bool compiling = false,			// Whether or not we're compiling
-	redefining = false,			// Whether or not we're redefining a word
-	isName = false;				// Set to true if the next word is the name of a
-								// word in a : definition
+
 
 
 
 // -----------------------------------------------------------------------------
 // FORTH WORDS
 // -----------------------------------------------------------------------------
-
-void type() {
-	static int16_t i;
-	if (dsp < 2) { status = STATUS_STACK_UNDERFLOW; return; }
-	for (i=0; i<ds[dsp - 1]; i++)
-		printf("%c", PEEK(ds[dsp - 2] + i));
-	dsp -= 2;
-}
 
 void dotQuote() {
 	static uint8_t i;

@@ -32,31 +32,34 @@
 #define XT_BEGIN               4
 #define XT_BYE                 5
 #define XT_CFETCH              6
-#define XT_CSTORE              7
-#define XT_DEPTH               8
-#define XT_DIVIDE              9
-#define XT_DOT                 10
-#define XT_DOT_S               11
-#define XT_DROP                12
-#define XT_DUP                 13
-#define XT_EMIT                14
-#define XT_EQUAL               15
-#define XT_EXECUTE             16
-#define XT_FETCH               17
-#define XT_GREATER_THAN        18
-#define XT_LESS_THAN           19
-#define XT_LSHIFT              20
-#define XT_OR                  21
-#define XT_OVER                22
-#define XT_PICK                23
-#define XT_PLUS                24
-#define XT_ROLL                25
-#define XT_RSHIFT              26
-#define XT_STORE               27
-#define XT_SWAP                28
-#define XT_TIMES               29
-#define XT_UNTIL               30
-#define XT_XOR                 31
+#define XT_CCOLON              7
+#define XT_CSTORE              8
+#define XT_DEPTH               9
+#define XT_DIVIDE              10
+#define XT_DOT                 11
+#define XT_DOT_S               12
+#define XT_DROP                13
+#define XT_DUP                 14
+#define XT_EMIT                15
+#define XT_EQUAL               16
+#define XT_EXECUTE             17
+#define XT_FETCH               18
+#define XT_GREATER_THAN        19
+#define XT_LESS_THAN           20
+#define XT_LSHIFT              21
+#define XT_OR                  22
+#define XT_OVER                23
+#define XT_PICK                24
+#define XT_PLUS                25
+#define XT_ROLL                26
+#define XT_RSHIFT              27
+#define XT_SEMICOLON           28
+#define XT_STORE               29
+#define XT_SWAP                30
+#define XT_TIMES               31
+#define XT_TYPE                32
+#define XT_UNTIL               33
+#define XT_XOR                 34
 
 
 // Build targets
@@ -88,6 +91,11 @@ xt input[40],							// input (above), compiled to XTs
 	dictionary[4096], dp = 0;			// Dictionary and its pointer
 uint8_t temp8 = 0;						// For one-off jobs requiring 8-bit and
 int16_t temp16 = 0;						// 16-bit numbers (obviously) :)
+bool compiling = false,			// Whether or not we're compiling
+	redefining = false,			// Whether or not we're redefining a word
+	isName = false;				// Set to true if the next word is the name of a
+								// word in a : definition
+
 
 
 // -----------------------------------------------------------------------------
@@ -245,6 +253,10 @@ void main() {
 			}
 			else if (strcmp(word, "rshift") == 0) {
 				input[ip] = XT_RSHIFT;
+				ip++;
+			}
+			else if (strcmp(word, "type") == 0) {
+				input[ip] = XT_TYPE;
 				ip++;
 			}
 			else if (strcmp(word, "!") == 0) {
@@ -489,6 +501,14 @@ void main() {
 					else {
 						dsp--;
 						ds[dsp - 1] *= ds[dsp];
+					}
+					break;
+				case XT_TYPE:
+					if (dsp < 2) error = 2;
+					else {
+						for (i=0; i<ds[dsp - 1]; i++)
+							printf("%c", PEEK(ds[dsp - 2] + i));
+						dsp -= 2;
 					}
 					break;
 				case XT_UNTIL:
